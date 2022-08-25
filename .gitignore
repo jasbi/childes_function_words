@@ -37,3 +37,13 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+.DS_Store
+.RData
+.Rhistory
+*/.DS_Store
+*/.RData
+*/.Rhistory
+
+
+raw_data/english_tokens.feather

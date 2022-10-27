@@ -1,0 +1,68 @@
+---
+title: "Plots From Function Word Data From Childes"
+author: "Sunny Zhou"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(childesr)
+library(tidyverse)
+library(feather)
+
+```
+
+
+#Load the data from local files
+```{r}
+#read the raw data
+exclusions <- read.csv(file = '../raw_data/token_exclusions.csv')
+english_tokens <- read_feather(path = '../raw_data/english_tokens.feather')
+speaker_stats<- read.csv(file="../raw_data/speaker_stats.csv")
+all_english_tokens <- read_feather(path = '../raw_data/all_english_tokens.feather')
+processed_tokens <-read_feather(path='../processed_data/english_tokens_processed.feather')
+```
+
+To make data analysis easier, I isolated the child and parent utterances based on their role: speaker.
+```{r isolate children and parents}
+chi_english_tokens<-processed_tokens%>%filter(speaker=="child")
+parent_english_tokens<-processed_tokens%>%filter(speaker=="parent")
+```
+
+
+First are some plots based on the general population. The children population (n=4583285) has a 
+```{r}
+#distribution of children
+uniques_chi<- chi_english_tokens%>% distinct(speaker_id, .keep_all = TRUE)
+hist(uniques_chi$age,xlab = "Children Ages (months)",)
+```
+Now, we want to normalize to the number of words the each person uses per sentence since it would follow that parents would use talk more within an interaction.
+Different function words imply different logical and language development. development. By comparing each child's function word category distribution to their parents a model may be able to be formulated to predict 
+
+```{r}
+counts_chi_tokens<-count(chi_english_tokens,word)%>%filter(word!="other")
+counts_chi_tokens$n<-round(((counts_chi_tokens$n)/sum(counts_chi_tokens$n)),digits=7)
+counts_chi_tokens<-counts_chi_tokens[order(counts_chi_tokens$n,decreasing=TRUE),]
+counts_chi_tokens<-counts_chi_tokens[(0:20),]
+
+ggplot(data=counts_chi_tokens, aes(x=reorder(word,n), y=n)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=n), vjust=-0.3, size=3.5)+
+  theme_minimal()+labs(title="Children Token Frequencies", 
+         x="Frequencies", y = "Tokens")
+
+counts_parent_tokens<-count(parent_english_tokens,word)
+counts_parent_tokens$n<-round(((counts_parent_tokens$n)/length(parent_english_tokens$word)),digits=7)
+counts_parent_tokens<-counts_parent_tokens[order(counts_parent_tokens$n,decreasing=TRUE),]
+counts_parent_tokens<-counts_parent_tokens[(0:20),]
+
+ggplot(data=counts_parent_tokens, aes(x=reorder(word,n), y=n)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=n), vjust=-0.3, size=3.5)+
+  theme_minimal()+ coord_flip()+labs(title="Parents Token Frequencies", 
+         x="Frequencies", y = "Tokens")
+
+```
+

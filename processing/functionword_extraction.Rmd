@@ -20,15 +20,15 @@ We use the package `r childesr` to access the data in the CHILDES database. The 
 #Getting data from 1270 children in 73 corpora...
 all_english_tokens <- get_tokens(collection = c("Eng-NA","Eng-UK"), 
                           role = c("target_child","Mother", "Father"),
-                          token = "*", n=Inf)
+                          token = "*")
 
 #Import all English utterances from CHILDES 
-eng_utterances <- get_utterances(collection = c("Eng-NA","Eng-UK"), 
-                                 role = c("target_child","Mother", "Father"))
+#eng_utterances <- get_utterances(collection = c("Eng-NA","Eng-UK"), 
+#                                 role = c("target_child","Mother", "Father"))
 
 # Import statistics on the speakers in CHILDES
-speaker_stats <- get_speaker_statistics(collection = c("Eng-NA","Eng-UK"), 
-                                        role = c("target_child","Mother", "Father"))
+#speaker_stats <- get_speaker_statistics(collection = c("Eng-NA","Eng-UK"), 
+#                                        role = c("target_child","Mother", "Father"))
 
 ```
 
@@ -148,55 +148,113 @@ english_tokens$utterance_type <-
          )
 ```
 
-## Coding for function words
+## Removing Case Sensitivity
 
-First we should make sure all words are in lower case:
+we should make sure all words are in lower case:
 
 ```{r lowerCase}
 english_tokens$gloss <- english_tokens$gloss %>% tolower()
 ```
 
+# Defining Function Words in English
+
+How do we define what function words are?
+
+Here is a list of our function words:
+* Logical Connectives: no, not, n't, and, or, if, nor, therefore
+* Quantifiers: none, some, each, every, all, most, few, many, several, a few, both, everyone, someone, somebody, everybody, noone, everything, something, nowhere, somewhere, everywhere
+* Comparative Quantity: more, less, much
+* Numerals: 
+  1. numbers: one, two, three, four, five, six, seven, eight, nine, ten
+  2. ordinals: first, second, third, fourth fifth, last
+* Modals: can, could, need, may, might, should, ought, must, maybe, perhaps, shall, will, would
+* Negative Polarity Items: any, anyone, anything, anyhow, anywhere, anything, anyway, ever, yet
+* Definiteness and Demonstratives:  
+  1. Definites: the, a, an
+  2. Demonstratives: this, that, these, those
+* Temporals: 
+  1. Quantifiers: always, usually, seldom, never, sometimes, now, often, once 
+  2. Connectives: when, while, after, before, then, until, since, whenever, during
+* Interrogatives: who, when, what, whose, where, how, why, whom
+* Locatives: on, in, out, up, down, under, above, below, along, over, behind, across, beside, between, beyond, inside, outside, into, near, onto, toward
+* Causal Connectives: because
+* Contrast Connectives: but, although
+* Additives: again, too, also, another, other, others, still
+* Exclusives: only, just
+* Emphasis: even, indeed
+* Auxiliaries: am, is, are, do, does
+* Pronouns: I, you, ..
+* Other: either, neither, whether as, else, almost, already, except, for, from, instead, such, with, without, about, by, very, to
+
 Then we create a word column that marks all words as "other". Then we mark the function words of interest.
 
-```{r NegationWords}
-english_tokens$word <- "other"
+```{r stopwords}
+library(stopwords)
+stopwords(language = "en", source = "snowball")
+```
 
-function_words <- c("no", "not", "cannot", "ain't", "isn't", "amn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "shan't", "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mayn't", "mightn't", "wouldn't", "mustn't", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "when", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "inside", "outside", "into", "near", "onto", "toward", "because", "therefore", "but", "although", "again", "too", "also", "another", "other", "others", "still", "even", "only", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless")
+```{r NLTK list}
+c('i', 'me', 'my', 'myself', 'we', 'our', 'ours', 
+'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 
+'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 
+'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
+ 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are',
+ 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
+ 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 
+'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 
+'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 
+'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 
+'s', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', "aren't", 'couldn', "couldn't", "didn't", "doesn't", 
+'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn',
+ "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 
+'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't") %>% length()
+
+```
+
+```{r NegationWords}
+english_tokens$word <- "content"
+
+function_words <- c(
+  "no", "not", "cannot", "ain't", "isn't", "amn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "shan't", "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mayn't", "mightn't", "wouldn't", "mustn't", 
+  "and", "or", "if", "nor", "therefore", 
+  "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", 
+  "more", "less", "much", 
+  "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", 
+  "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", 
+  "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would",
+  "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", 
+  "the", "a", "an", 
+  "this", "that", "these", "those", 
+  "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", 
+  "while", "after", "before", "then", "until", "since", "whenever", "during", 
+  "who", "when", "what", "whose", "where", "how", "why", "whom", 
+  "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "inside", "outside", "into", "near", "onto", "toward", 
+  "because", 
+  "but", "although",
+  "am", "is", "are",
+  "i", "you", "he", "she", "we", "they", "her", "him", "my", "your", "it", "them", "their", "our", "its", "me", "his", "hers", "mine", "yours", "myself", "yourself", "himself", "herself", "itself", "ourselves", "themselves", "yourselves", 
+  "i'm", "you're", "he's", "she's", "we're", "they're", 
+  "again", "too", "also", "another", "other", "others", "still",
+  "only", "just",
+  "even", "indeed",
+  "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless"
+  )
 
 for (x in function_words){
   english_tokens$word[english_tokens$gloss==x] <- x
 }
 ```
 
-# Function Words of Interest
-
-Next we need to create the categories of function words we are interested in:
-
-* Logical Connectives: no, not, n't, and, or, if, nor
-* Quantifiers: none, some, each, every, all, most, few, many, several, a few, both, everyone, someone, somebody, everybody, nonone, everything, something, nowhere, somewhere, everywhere
-* Comparative Quantity: more, less, much
-* Numerals: 1. numbers: one, two, three, four, five, six, seven, eight, nine, ten 2. ordinals: first, second, third, fourth fifth, last
-* Modals: can, could, need, may, might, should, ought, must, maybe, perhaps, shall
-* Negative Polarity Items: any, anyone, anything, anyhow, anywhere, anything, anyway, ever, yet
-* Definiteness and Demonstratives: 1. Definites: the, a, an 2. Demonstratives: this, that, these, those
-* Temporals: 1. Quantifiers: always, usually, seldom, never, sometimes, now, often, once 2. Connectives: when, while, after, before, then, until, since, whenever, during
-* Interrogatives: who, when, what, whose, where, how, why, whom
-* Locatives: on, in, out, up, down, under, above, below, along, over, behind, across, beside, between, beyond, inside, outside, into, near, onto, toward
-* Causal Connectives: because, therefore
-* Contrast Connectives: but, although
-* Additives: again, too, also, another, other, others, still
-* Focus Particles: even, only, indeed
-* Other: either, neither, whether as, else, almost, already, except, for, from, instead, same, different, such, with, without, about, by, very
-
 First we start with marking content words and selecting logical connectives:
 
 ```{r}
-english_tokens$functionword_category <- "content"
+english_tokens$word_category <- "content"
 
 logical_connectives <- c("no", "not", "cannot", "ain't", "isn't", "amn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "shan't", "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mayn't", "mightn't", "wouldn't", "mustn't", "and", "or", "if", "nor", "therefore") 
 
 for (x in logical_connectives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Logical Connective"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Logicals"
 }
 ```
 
@@ -206,7 +264,7 @@ Labeling Quantifiers:
 quantifiers <- c("none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere") 
 
 for (x in quantifiers){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Quantifiers"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Quantifiers"
 }
 ```
 
@@ -216,7 +274,7 @@ Quantity words:
 quantity <- c("more", "less", "much") 
 
 for (x in quantity){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Quantity"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Quantity"
 }
 ```
 
@@ -226,7 +284,7 @@ Cardinal Numbers:
 cardinals <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten") 
 
 for (x in cardinals){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Cardinals"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Cardinals"
 }
 ```
 
@@ -236,17 +294,17 @@ Ordinal Numbers:
 ordinals <- c("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last") 
 
 for (x in ordinals){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Ordinals"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Ordinals"
 }
 ```
 
 Modals:
 
 ```{r}
-modals <- c("can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall") 
+modals <- c("can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would") 
 
 for (x in modals){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Modals"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Modals"
 }
 ```
 
@@ -256,7 +314,7 @@ Negative Polarity Items:
 NPI <- c("any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet") 
 
 for (x in NPI){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "NPI"
+  english_tokens$word_category[english_tokens$gloss==x] <- "NPI"
 }
 ```
 
@@ -266,17 +324,18 @@ Definites:
 definites <- c("the", "a", "an") 
 
 for (x in definites){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Definites"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Definites"
 }
 ```
 
 Demonstratives:
 
 ```{r}
+# "that" is ambiguous between the complementizer and the determiner
 demonstratives <- c("this", "that", "these", "those") 
 
 for (x in demonstratives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Demonstratives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Demonstratives"
 }
 ```
 
@@ -286,37 +345,37 @@ Temporal Quantifiers:
 temporal_quantifiers <- c("always", "usually", "seldom", "never", "sometimes", "often", "once", "twice") 
 
 for (x in temporal_quantifiers){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Temporal Quantifiers"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Temporal Quantifiers"
 }
 ```
 
 Temporal Connectives:
 
 ```{r}
-temporal_connectives <- c("when", "while", "after", "before", "then", "until", "since", "whenever", "during") 
+temporal_connectives <- c("while", "after", "before", "then", "until", "since", "whenever", "during") 
 
 for (x in temporal_connectives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Temporal Connectives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Temporal Connectives"
 }
 ```
 
-Interrogatives:
+Wh words:
 
 ```{r}
-temporal_connectives <- c("who", "when", "what", "whose", "where", "how", "why", "whom") 
+Wh <- c("who", "when", "what", "whose", "where", "how", "why", "whom") 
 
-for (x in temporal_connectives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Temporal Connectives"
+for (x in Wh){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Wh"
 }
 ```
 
 Locatives:
 
 ```{r}
-locatives <- c("on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "inside", "outside", "into", "near", "onto", "toward") 
+locatives <- c("on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward") 
 
 for (x in locatives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Locatives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Locatives"
 }
 ```
 
@@ -326,17 +385,49 @@ Causal Connectives:
 causatives <- c("because") 
 
 for (x in causatives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Causal Connectives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Causal Connectives"
 }
 ```
 
-Constrast Connectives:
+Contrast Connectives:
 
 ```{r}
 contrasts <- c("but", "although") 
 
 for (x in contrasts){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Contrast Connectives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Contrast Connectives"
+}
+```
+
+Auxiliaries:
+
+We did not include "do", "does", "have", and "has" because they are also used as main verbs often
+
+```{r}
+auxiliaries <- c("am", "is", "are") 
+
+for (x in contrasts){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Be Auxiliaries"
+}
+```
+
+Pronouns:
+
+```{r}
+pronouns <- c("i", "you", "he", "she", "we", "they", "her", "him", "my", "your", "it", "them", "their", "our", "its", "me", "his", "hers", "mine", "yours", "myself", "yourself", "himself", "herself", "itself", "ourselves", "themselves", "yourselves") 
+
+for (x in pronouns){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Pronouns"
+}
+```
+
+Pronouns + auxiliaries:
+
+```{r}
+pronoun_aux <- c("i'm", "you're", "he's", "she's", "we're", "they're") 
+
+for (x in pronoun_aux){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Pronoun_Aux"
 }
 ```
 
@@ -346,28 +437,44 @@ Additives:
 additives <- c("again", "too", "also", "another", "other", "others", "still") 
 
 for (x in temporal_connectives){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Additives"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Additives"
 }
 ```
+
+Exclusives:
+
+```{r}
+exclusives <- c("only","just") 
+
+for (x in exclusives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Exclusives"
+}
+```
+
 
 Focus Particles:
 
 ```{r}
-focus <- c("even", "only", "indeed") 
+focus <- c("even", "indeed") 
 
 for (x in focus){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Focus Particles"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Focus Particles"
 }
 ```
 
 Other:
 
 ```{r}
-other <- c("either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless") 
+other <- c("either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless", "to", "of") 
 
 for (x in other){
-  english_tokens$functionword_category[english_tokens$gloss==x] <- "Other"
+  english_tokens$word_category[english_tokens$gloss==x] <- "Other"
 }
+```
+
+```{r}
+english_tokens$syncategory <- "Function"
+english_tokens$syncategory[english_tokens$word_category=="content"] <- "Content"
 ```
 
 ## Saving Summary Tables
@@ -377,5 +484,33 @@ write_feather(english_tokens, "../processed_data/english_tokens_processed.feathe
 ```
 
 
+# Utterance Processing
+
+## Loading Utterance Data from Childes-DB
+
+We use the package `r childesr` to access the data in the CHILDES database. The code below downloades and stores all utterances by children and parents. Utterances are annotated for the type of sentence (declarative, interrogative, imperative).
+
+```{r ChildesDBimports}
+#Import all English utterances from CHILDES 
+eng_utterances <- get_utterances(collection = c("Eng-NA","Eng-UK"), 
+                                 role = c("target_child","Mother", "Father"))
+```
+
+
+```{r lowerCase}
+eng_utterances$utterance <- eng_utterances$gloss %>% tolower()
+
+eng_utterances$no <-
+  eng_utterances$utterance %>%
+  str_count(pattern = "(^|[^a-z])no([^a-z]|$)")
+
+eng_utterances$not <-
+  eng_utterances$utterance %>%
+  str_count(pattern = "(^|[^a-z])not([^a-z]|$)")
+
+eng_utterances$nt <-
+  eng_utterances$utterance %>%
+  str_count(pattern = "n't")
+```
 
 

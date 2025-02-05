@@ -10,11 +10,12 @@ library(tidyverse)
 library(feather)
 library(brms)
 library(ggeffects)
+library(ggrepel)
 ```
 
 # Load Data
 
-```{r cars}
+```{r processedEnglishTokens}
 english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
 ```
 
@@ -24,18 +25,22 @@ There are content words below 6 months which seems quite impossible. It's import
 
 ## Function vs. Content Words
 
+Here we compute cumulative relative frequencies of function vs. content words by grouping by "syntactic category":
+
 ```{r}
 syncategory_relfreq <-
   english_tokens_processed %>%
   group_by(syncategory, age, speaker) %>%
   summarise(freq=n()) %>%
   group_by(speaker, age) %>%
-  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  mutate(total=sum(freq), relfreq=freq/sum(freq), pct=relfreq*100) %>%
   group_by(syncategory, speaker) %>%
   arrange(age) %>%
   mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total))
 ```
 ## Individual Function Words
+
+Here we compute cumulative relative frequencies for individual function words by groupingby "word":
 
 ```{r}
 functionword_relfreq <-
@@ -48,17 +53,9 @@ functionword_relfreq <-
   arrange(age) %>%
   mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
 ```
-
-```{r input_frequency_table }
-funword_freqtable <-
-  functionword_relfreq %>%
-  filter(speaker=="parent") %>%
-  group_by(word) %>%
-  summarize(word_freq=sum(freq))
-```
-
-
 ## Function Word Semantic Categories
+
+Here we compute cumulative relative frequencies by semantic categories we have created. However, we have not planned any analyses of these yet.
 
 ```{r}
 wordcategory_relfreq <-
@@ -74,28 +71,29 @@ wordcategory_relfreq <-
 
 ## Function Word Syntactic Categories
 
+W ehave not yet looked at the emergence of different syntactic categories
 
 # Plots and Growth Curves
 
-# Content vs. Function Word Production
+## Content vs. Function Word Production
+
+The graph below shows percent word category (content vs. function word) in each monthly been during the development of the child for parents and children.
 
 ```{r}
 syncategory_relfreq %>%
-  ggplot(aes(age, ppt)) +
+  ggplot(aes(age, pct)) +
   geom_point() +
   facet_grid(speaker~syncategory) +
   theme_bw()
 ```
 
+## Distribution of Individual Function Words
 
+### Connectives
 
-# Distribution of Individual Function Words
+#### Negation
 
-## Connectives
-
-### Negation
-
-#### No
+##### No (Done)
 
 ```{r negation_no}
 functionword_relfreq %>%
@@ -150,7 +148,19 @@ ggplot(neg_no_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-#### Not
+##### Yes (NA)
+
+```{r negation_no}
+functionword_relfreq %>%
+  filter(word=="yes") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+
+##### Not (Done)
 
 ```{r negation_not_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -198,7 +208,10 @@ ggplot(neg_not_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### Conjunction (and)
+
+##### n't
+
+#### And (Done)
 
 ```{r conjunction_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -246,7 +259,7 @@ ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### Disjunction (or)
+#### Or (Done)
 
 ```{r conjunction, echo=FALSE}
 functionword_relfreq %>%
@@ -294,7 +307,7 @@ ggplot(or_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### Conditional (if)
+#### If (Done)
 
 ```{r conditional, echo=FALSE}
 functionword_relfreq %>%
@@ -342,13 +355,168 @@ ggplot(if_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-## Quantifiers
+#### But (Done)
 
-none, some, each, every, all, most, few, many, several, a few, both, everyone, someone, somebody, everybody, noone, everything, something, nowhere, somewhere, everywhere
+```{r but_connective_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="but")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
-### all
+```{r but_growth_model, include=FALSE}
+but_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="but", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 5), nlpar = "upperAsymptote", lb = 0, ub = 5),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/but_lagModel",
+  iter = 8000)
+```
 
-```{r universal_all_comparison_plot, echo=FALSE}
+```{r age_of_production_if}
+age_of_production <-
+  rbind(age_of_production, c("but", round(fixef(but_lagModel)[3,],1)))
+```
+
+```{r but_predictions}
+but_predictions <- as.data.frame(fitted(but_lagModel))
+
+but_childdata <- filter(functionword_relfreq, word=="but", speaker=="child")
+but_childdata$predictions <- but_predictions[, "Estimate"]
+```
+
+```{r but_prediction_Plot} 
+ggplot(but_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Because (Done)
+
+```{r because_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="because")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r because_growth_model, include=FALSE}
+because_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="because", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 5), nlpar = "upperAsymptote", lb = 0, ub = 5),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/because_lagModel",
+  iter = 8000)
+```
+
+```{r because_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("because", round(fixef(because_lagModel)[3,],1)))
+```
+
+```{r because_predictions}
+because_predictions <- as.data.frame(fitted(because_lagModel))
+
+because_childdata <- filter(functionword_relfreq, word=="because", speaker=="child")
+because_childdata$predictions <- because_predictions[, "Estimate"]
+```
+
+```{r because_prediction_Plot} 
+ggplot(because_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Unless (Done)
+```{r unless_connective_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="unless")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r unless_growth_model, include=FALSE}
+unless_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="unless", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/unless_lagModel",
+  iter = 8000)
+```
+
+```{r age_of_production_if}
+age_of_production <-
+  rbind(age_of_production, c("unless", round(fixef(unless_lagModel)[3,],1)))
+```
+
+```{r unless_predictions}
+unless_predictions <- as.data.frame(fitted(unless_lagModel))
+
+unless_childdata <- filter(functionword_relfreq, word=="unless", speaker=="child")
+unless_childdata$predictions <- unless_predictions[, "Estimate"]
+```
+
+```{r unless_prediction_Plot} 
+ggplot(unless_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Although (Not enough data)
+
+```{r usually_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="although")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+### Individual Quantifiers
+
+none, every, few, several, a few, , noone, nowhere, somewhere, everywhere
+
+#### All (Done)
+
+```{r all_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="all")%>%
   ggplot(aes(age, cumulative_ppt)) +
@@ -394,58 +562,9 @@ ggplot(all_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### every (terrible model)
+#### Some (Done)
 
-```{r every_comparison_plot, echo=FALSE}
-functionword_relfreq %>%
-  filter(word=="every")%>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) + 
-  theme_bw()
-```
-
-```{r every_growth_model, include=FALSE}
-every_lagModel <- brm(
-  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
-     upperAsymptote ~ 1,
-     growthRate ~ 1,
-     lag ~ 1,
-     nl = TRUE),
-  data = filter(functionword_relfreq, word=="every", age>20, speaker=="child"),
-  prior = c(
-    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
-    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
-    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
-  ),
-  file = "../modeling/every_lagModel",
-  control = list(adapt_delta = 0.9),
-  iter = 15000)
-```
-
-```{r every_age_of_production}
-age_of_production <-
-  rbind(age_of_production, c("every", round(fixef(all_lagModel)[3,],1)))
-```
-
-```{r every_predictions}
-every_predictions <- as.data.frame(fitted(every_lagModel))
-
-every_childdata <- filter(functionword_relfreq, word=="every", age>20, speaker=="child")
-every_childdata$predictions <- every_predictions[, "Estimate"]
-```
-
-```{r every_prediction_Plot} 
-ggplot(every_childdata, aes(x = age, y = cumulative_ppt)) +
-  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
-```
-
-### Some
-
-```{r some_comparison_plot, echo=FALSE}
+```{r some_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="some")%>%
   ggplot(aes(age, cumulative_ppt)) +
@@ -491,8 +610,7 @@ ggplot(some_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-
-### Both (low cutoff problem) 
+#### Both (Done) 
 
 ```{r both_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -540,8 +658,157 @@ ggplot(both_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
+#### Each (Done)
 
-### Many (7633 divergent transitions!)
+```{r each_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="each")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r each_growth_model, include=FALSE}
+each_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="each", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/each_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r each_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("each", round(fixef(each_lagModel)[3,],1)))
+```
+
+```{r each_predictions}
+each_predictions <- as.data.frame(fitted(each_lagModel))
+
+each_childdata <- filter(functionword_relfreq, word=="each", speaker=="child")
+each_childdata$predictions <- each_predictions[, "Estimate"]
+```
+
+```{r each_prediction_Plot} 
+ggplot(each_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+
+#### Most (Done)
+
+```{r most_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="most")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r most_growth_model, include=FALSE}
+most_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="most", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/most_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("most", round(fixef(most_lagModel)[3,],1)))
+```
+
+```{r most_predictions}
+most_predictions <- as.data.frame(fitted(most_lagModel))
+
+most_childdata <- filter(functionword_relfreq, word=="most", speaker=="child", age>20)
+most_childdata$predictions <- most_predictions[, "Estimate"]
+```
+
+```{r most_prediction_Plot} 
+ggplot(most_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Every (Done)
+
+```{r every_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="every")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r every_growth_model, include=FALSE}
+every_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="every", age>20, speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/every_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 50000)
+```
+
+```{r every_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("every", round(fixef(every_lagModel)[3,],1)))
+```
+
+```{r every_predictions}
+every_predictions <- as.data.frame(fitted(every_lagModel))
+
+every_childdata <- filter(functionword_relfreq, word=="every", age>20, speaker=="child")
+every_childdata$predictions <- every_predictions[, "Estimate"]
+```
+
+```{r every_prediction_Plot} 
+ggplot(every_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Many (Not Converging)
 
 ```{r many_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -591,60 +858,9 @@ ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Most
+#### None
 
-```{r most_comparison_plot, echo=FALSE}
-functionword_relfreq %>%
-  filter(word=="most")%>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) +
-  theme_bw()
-```
-
-```{r most_growth_model, include=FALSE}
-most_lagModel <- brm(
-  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
-     upperAsymptote ~ 1,
-     growthRate ~ 1,
-     lag ~ 1,
-     nl = TRUE),
-  data = filter(functionword_relfreq, word=="most", speaker=="child"),
-  prior = c(
-    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
-    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
-    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
-  ),
-  file = "../modeling/most_lagModel",
-  iter = 10000)
-```
-
-```{r age_of_production_all}
-age_of_production <-
-  rbind(age_of_production, c("most", round(fixef(most_lagModel)[3,],1)))
-```
-
-```{r most_predictions}
-most_predictions <- as.data.frame(fitted(most_lagModel))
-
-most_childdata <- filter(functionword_relfreq, word=="most", speaker=="child")
-most_childdata$predictions <- most_predictions[, "Estimate"]
-```
-
-```{r most_prediction_Plot} 
-ggplot(most_childdata, aes(x = age, y = cumulative_ppt)) +
-  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
-```
-
-
-
-
-### None (not done)
-
-```{r most_comparison_plot, echo=FALSE}
+```{r none_quantifier_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="none")%>%
   ggplot(aes(age, cumulative_ppt)) +
@@ -662,17 +878,17 @@ none_lagModel <- brm(
      nl = TRUE),
   data = filter(functionword_relfreq, word=="none", speaker=="child"),
   prior = c(
-    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
   file = "../modeling/none_lagModel",
-  iter = 10000)
+  iter = 12000)
 ```
 
 ```{r age_of_production_all}
 age_of_production <-
-  rbind(age_of_production, c("most", round(fixef(most_lagModel)[3,],1)))
+  rbind(age_of_production, c("none", round(fixef(none_lagModel)[3,],1)))
 ```
 
 ```{r none_predictions}
@@ -691,11 +907,652 @@ ggplot(none_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-## Comparatives
+#### Few
 
-### More
+```{r few_quantifier_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="few")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
-```{r many_comparison_plot, echo=FALSE}
+
+#### Everyone
+
+```{r everyone_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="everyone")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+
+
+#### Everybody
+
+```{r everyone_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="everybody")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Everything
+
+```{r everything_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="everything")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Someone
+
+```{r someone_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="someone", age>20)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Somebody
+
+```{r somebody_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="somebody", age>20)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Something
+
+```{r something_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="something")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Everywhere
+#### Somewhere
+
+```{r everywhere_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="everywhere")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Somewhere
+
+```{r something_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="somewhere")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+### Temporal Quantifiers
+
+#### Always (Done)
+
+```{r always_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="always")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r always_growth_model, include=FALSE}
+always_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="always", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/always_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("always", round(fixef(always_lagModel)[3,],1)))
+```
+
+```{r all_predictions}
+always_predictions <- as.data.frame(fitted(always_lagModel))
+
+always_childdata <- filter(functionword_relfreq, word=="always", speaker=="child")
+always_childdata$predictions <- always_predictions[, "Estimate"]
+```
+
+```{r all_prediction_Plot} 
+ggplot(always_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Sometimes (Done)
+
+```{r sometimes_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="sometimes")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r sometimes_growth_model, include=FALSE}
+sometimes_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="sometimes", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/sometimes_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("sometimes", round(fixef(sometimes_lagModel)[3,],1)))
+```
+
+```{r all_predictions}
+sometimes_predictions <- as.data.frame(fitted(sometimes_lagModel))
+
+sometimes_childdata <- filter(functionword_relfreq, word=="sometimes", speaker=="child")
+sometimes_childdata$predictions <- sometimes_predictions[, "Estimate"]
+```
+
+```{r all_prediction_Plot} 
+ggplot(sometimes_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Usually (Done)
+
+```{r usually_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="usually")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r usually_growth_model, include=FALSE}
+usually_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="usually", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/usually_lagModel",
+  iter = 10000)
+```
+
+```{r ususally_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("usually", round(fixef(usually_lagModel)[3,],1)))
+```
+
+```{r ususally_predictions}
+usually_predictions <- as.data.frame(fitted(usually_lagModel))
+
+usually_childdata <- filter(functionword_relfreq, word=="usually", speaker=="child")
+usually_childdata$predictions <- usually_predictions[, "Estimate"]
+```
+
+```{r ususally_prediction_Plot} 
+ggplot(usually_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Never (Not Convergin)
+
+```{r never_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="never")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r never_growth_model, include=FALSE}
+never_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="never", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/never_lagModel",
+  control = list(adapt_delta = 0.99),
+  iter = 60000)
+```
+
+```{r never_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("never", round(fixef(never_lagModel)[3,],1)))
+```
+
+```{r never_predictions}
+never_predictions <- as.data.frame(fitted(never_lagModel))
+
+never_childdata <- filter(functionword_relfreq, word=="never", speaker=="child")
+never_childdata$predictions <- never_predictions[, "Estimate"]
+```
+
+```{r never_prediction_Plot} 
+ggplot(never_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Often (Not enough data)
+
+```{r often_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="often")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+#### Seldom (No Data!)
+
+```{r seldom_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="seldom")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+#### Once (Done)
+
+```{r once_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="once")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r once_growth_model, include=FALSE}
+once_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="once", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/once_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("once", round(fixef(once_lagModel)[3,],1)))
+```
+
+```{r once_predictions}
+once_predictions <- as.data.frame(fitted(once_lagModel))
+
+once_childdata <- filter(functionword_relfreq, word=="once", speaker=="child")
+once_childdata$predictions <- once_predictions[, "Estimate"]
+```
+
+```{r once_prediction_Plot} 
+ggplot(once_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Twice (Not enough data)
+
+```{r twice_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="twice")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+### Temporals
+
+#### Before (Done)
+
+```{r before_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="before")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r before_growth_model, include=FALSE}
+before_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="before", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/before_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("before", round(fixef(before_lagModel)[3,],1)))
+```
+
+```{r before_predictions}
+before_predictions <- as.data.frame(fitted(before_lagModel))
+
+before_childdata <- filter(functionword_relfreq, word=="before", speaker=="child", age>20)
+before_childdata$predictions <- before_predictions[, "Estimate"]
+```
+
+```{r before_prediction_Plot} 
+ggplot(before_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### After (Done)
+
+```{r after_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="after")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r after_growth_model, include=FALSE}
+after_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="after", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/after_lagModel",
+  iter = 12000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("after", round(fixef(after_lagModel)[3,],1)))
+```
+
+```{r after_predictions}
+after_predictions <- as.data.frame(fitted(after_lagModel))
+
+after_childdata <- filter(functionword_relfreq, word=="after", speaker=="child")
+after_childdata$predictions <- after_predictions[, "Estimate"]
+```
+
+```{r after_prediction_Plot} 
+ggplot(after_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Then (Done)
+
+```{r until_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="then")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r then_growth_model, include=FALSE}
+then_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="then", speaker=="child", age>18),
+  prior = c(
+    prior(uniform(0, 5), nlpar = "upperAsymptote", lb = 0, ub = 5),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/then_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("then", round(fixef(then_lagModel)[3,],1)))
+```
+
+```{r then_predictions}
+then_predictions <- as.data.frame(fitted(then_lagModel))
+
+then_childdata <- filter(functionword_relfreq, word=="then", speaker=="child", age>18)
+then_childdata$predictions <- then_predictions[, "Estimate"]
+```
+
+```{r then_prediction_Plot} 
+ggplot(then_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Until (Done)
+
+```{r until_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="until")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r until_growth_model, include=FALSE}
+until_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="until", speaker=="child", age>21),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/until_lagModel",
+  iter = 10000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("until", round(fixef(until_lagModel)[3,],1)))
+```
+
+```{r until_predictions}
+until_predictions <- as.data.frame(fitted(until_lagModel))
+
+until_childdata <- filter(functionword_relfreq, word=="until", speaker=="child", age>21)
+until_childdata$predictions <- until_predictions[, "Estimate"]
+```
+
+```{r until_prediction_Plot} 
+ggplot(until_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### During (Not enough data)
+
+```{r until_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="during")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+#### While 
+
+```{r while_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="while")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r while_growth_model, include=FALSE}
+while_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="while", speaker=="child", age>24),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/while_lagModel",
+  iter = 12000)
+```
+
+```{r age_of_production_all}
+age_of_production <-
+  rbind(age_of_production, c("while", round(fixef(while_lagModel)[3,],1)))
+```
+
+```{r all_predictions}
+while_predictions <- as.data.frame(fitted(while_lagModel))
+
+while_childdata <- filter(functionword_relfreq, word=="while", speaker=="child")
+while_childdata$predictions <- while_predictions[, "Estimate"]
+```
+
+```{r all_prediction_Plot} 
+ggplot(while_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Since
+
+```{r since_temporals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="since")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+
+
+
+### Comparatives
+
+#### More (Done)
+
+```{r more_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="more")%>%
   ggplot(aes(age, cumulative_ppt)) +
@@ -705,36 +1562,36 @@ functionword_relfreq %>%
 ```
 
 ```{r more_growth_model, include=FALSE}
-many_lagModel <- brm(
+more_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
      upperAsymptote ~ 1,
      growthRate ~ 1,
      lag ~ 1,
      nl = TRUE),
-  data = filter(functionword_relfreq, word=="many", age>20, speaker=="child"),
+  data = filter(functionword_relfreq, word=="more", speaker=="child"),
   prior = c(
-    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
-  file = "../modeling/many_lagModel",
+  file = "../modeling/more_lagModel",
   iter = 12000)
 ```
 
 ```{r many_age_of_production}
 age_of_production <-
-  rbind(age_of_production, c("many", round(fixef(many_lagModel)[3,],1)))
+  rbind(age_of_production, c("more", round(fixef(more_lagModel)[3,],1)))
 ```
 
 ```{r many_predictions}
-many_predictions <- as.data.frame(fitted(many_lagModel))
+more_predictions <- as.data.frame(fitted(more_lagModel))
 
-many_childdata <- filter(functionword_relfreq, word=="many", speaker=="child")
-many_childdata$predictions <- many_predictions[, "Estimate"]
+more_childdata <- filter(functionword_relfreq, word=="more", speaker=="child")
+more_childdata$predictions <- more_predictions[, "Estimate"]
 ```
 
 ```{r many_prediction_Plot} 
-ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
+ggplot(more_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
@@ -742,7 +1599,7 @@ ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Less
+#### Less (Not enough data)
 
 ```{r less_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -753,33 +1610,33 @@ functionword_relfreq %>%
   theme_bw()
 ```
 
-```{r many_growth_model, include=FALSE}
-many_lagModel <- brm(
+```{r less_growth_model, include=FALSE}
+less_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
      upperAsymptote ~ 1,
      growthRate ~ 1,
      lag ~ 1,
      nl = TRUE),
-  data = filter(functionword_relfreq, word=="many", age>20, speaker=="child"),
+  data = filter(functionword_relfreq, word=="less", speaker=="child"),
   prior = c(
     prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
-  file = "../modeling/many_lagModel",
+  file = "../modeling/less_lagModel",
   iter = 12000)
 ```
 
-```{r many_age_of_production}
+```{r less_age_of_production}
 age_of_production <-
-  rbind(age_of_production, c("many", round(fixef(many_lagModel)[3,],1)))
+  rbind(age_of_production, c("less", round(fixef(many_lagModel)[3,],1)))
 ```
 
-```{r many_predictions}
-many_predictions <- as.data.frame(fitted(many_lagModel))
+```{r less_predictions}
+less_predictions <- as.data.frame(fitted(less_lagModel))
 
-many_childdata <- filter(functionword_relfreq, word=="many", speaker=="child")
-many_childdata$predictions <- many_predictions[, "Estimate"]
+less_childdata <- filter(functionword_relfreq, word=="less", speaker=="child")
+less_childdata$predictions <- less_predictions[, "Estimate"]
 ```
 
 ```{r many_prediction_Plot} 
@@ -793,9 +1650,59 @@ ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-## Definites and Demonstratives
+#### Much (Done)
 
-### The
+```{r much_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="much")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r much_growth_model, include=FALSE}
+much_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="much", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/much_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 30000)
+```
+
+```{r much_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("much", round(fixef(much_lagModel)[3,],1)))
+```
+
+```{r much_predictions}
+much_predictions <- as.data.frame(fitted(much_lagModel))
+
+much_childdata <- filter(functionword_relfreq, word=="much", speaker=="child")
+much_childdata$predictions <- much_predictions[, "Estimate"]
+```
+
+```{r much_prediction_Plot} 
+ggplot(much_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+### Definites and Demonstratives
+
+#### The (Done)
 
 ```{r the_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -807,7 +1714,7 @@ functionword_relfreq %>%
 ```
 
 ```{r the_growth_model, include=FALSE}
-the_lagModel <- brm(
+the_lagModel  <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
      upperAsymptote ~ 1,
      growthRate ~ 1,
@@ -843,7 +1750,7 @@ ggplot(the_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### A
+#### A (Done)
 
 ```{r a_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -891,7 +1798,7 @@ ggplot(a_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### This
+#### This (Done)
 
 ```{r the_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -940,7 +1847,7 @@ ggplot(this_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### That
+#### That (Done)
 
 "that" can be a determiner or a complementizer and you need to separate them.
 
@@ -962,12 +1869,13 @@ that_lagModel <- brm(
      nl = TRUE),
   data = filter(functionword_relfreq, word=="that", speaker=="child"),
   prior = c(
-    prior(uniform(0, 40), nlpar = "upperAsymptote", lb = 0, ub = 40),
+    prior(uniform(0, 30), nlpar = "upperAsymptote", lb = 0, ub = 30),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
   file = "../modeling/that_lagModel",
-  iter = 12000)
+  control = list(adapt_delta = 0.95),
+  iter = 10000)
 ```
 
 ```{r that_age_of_production}
@@ -990,7 +1898,7 @@ ggplot(that_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### These
+#### These (Done)
 
 ```{r these_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1039,7 +1947,7 @@ ggplot(these_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Those
+#### Those (Done)
 
 ```{r those_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1057,7 +1965,7 @@ those_lagModel <- brm(
      growthRate ~ 1,
      lag ~ 1,
      nl = TRUE),
-  data = filter(functionword_relfreq, word=="those", speaker=="child"),
+  data = filter(functionword_relfreq, word=="those", speaker=="child", age>11),
   prior = c(
     prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
@@ -1076,7 +1984,7 @@ age_of_production <-
 ```{r those_predictions}
 those_predictions <- as.data.frame(fitted(those_lagModel))
 
-those_childdata <- filter(functionword_relfreq, word=="those", speaker=="child")
+those_childdata <- filter(functionword_relfreq, word=="those", speaker=="child", age>11)
 those_childdata$predictions <- those_predictions[, "Estimate"]
 ```
 
@@ -1089,11 +1997,9 @@ ggplot(those_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-## Wh Words
+### Wh Words
 
-what, who, when, whose, where, how, why, whom
-
-### What
+#### What (Done)
 
 ```{r what_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1143,7 +2049,7 @@ ggplot(what_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Who
+#### Who (Done)
 
 ```{r can_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1191,7 +2097,7 @@ ggplot(who_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### When
+#### When (Done)
 
 ```{r when_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1245,7 +2151,7 @@ ggplot(when_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-### Where
+#### Where (Done)
 
 ```{r when_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1295,7 +2201,7 @@ ggplot(where_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-### Why
+#### Why (Done)
 
 ```{r why_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1345,7 +2251,7 @@ ggplot(why_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-### How
+#### How (Done)
 
 ```{r how_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1395,63 +2301,769 @@ ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-## Number Words
+#### Whose
 
-```{r universal, echo=FALSE}
+```{r whose_Wh_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="whose")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r whose_wh_model, include=FALSE}
+whose_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="whose", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/whose_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 12000)
+```
+
+```{r how_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("how", round(fixef(how_lagModel)[3,],1)))
+```
+
+```{r how_predictions}
+how_predictions <- as.data.frame(fitted(how_lagModel))
+
+how_childdata <- filter(functionword_relfreq, word=="how", speaker=="child")
+how_childdata$predictions <- how_predictions[, "Estimate"]
+```
+
+```{r how_prediction_Plot} 
+ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Whom (not enough data)
+
+```{r how_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="whom")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+### Number Words
+
+#### One (Done)
+
+```{r one_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="one")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
-```{r universal, echo=FALSE}
+```{r one_growth_model, include=FALSE}
+one_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="one", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 12), nlpar = "upperAsymptote", lb = 0, ub = 12),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/one_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r anything_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("one", round(fixef(one_lagModel)[3,],1)))
+```
+
+```{r anything_predictions}
+one_predictions <- as.data.frame(fitted(one_lagModel))
+
+one_childdata <- filter(functionword_relfreq, word=="one", speaker=="child")
+one_childdata$predictions <- one_predictions[, "Estimate"]
+```
+
+```{r anything_prediction_Plot} 
+ggplot(one_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Two (Done)
+
+```{r two_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="two")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r two_growth_model, include=FALSE}
+two_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="two", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 12), nlpar = "upperAsymptote", lb = 0, ub = 12),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/two_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r two_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("two", round(fixef(two_lagModel)[3,],1)))
+```
+
+```{r two_predictions}
+two_predictions <- as.data.frame(fitted(two_lagModel))
+
+two_childdata <- filter(functionword_relfreq, word=="two", speaker=="child")
+two_childdata$predictions <- two_predictions[, "Estimate"]
+```
+
+```{r two_prediction_Plot} 
+ggplot(two_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
 ```
 
 
-```{r universal, echo=FALSE}
+#### Three (Done)
+
+```{r three_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="three")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
-```{r universal, echo=FALSE}
+```{r three_growth_model, include=FALSE}
+three_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="three", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 3), nlpar = "upperAsymptote", lb = 0, ub = 3),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/three_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 20000)
+```
+
+```{r three_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("three", round(fixef(three_lagModel)[3,],1)))
+```
+
+```{r three_predictions}
+three_predictions <- as.data.frame(fitted(three_lagModel))
+
+three_childdata <- filter(functionword_relfreq, word=="three", speaker=="child")
+three_childdata$predictions <- three_predictions[, "Estimate"]
+```
+
+```{r three_prediction_Plot} 
+ggplot(three_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Four (Done)
+
+```{r four_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="four")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
-```{r universal, echo=FALSE}
+```{r four_growth_model, include=FALSE}
+four_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="four", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/four_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r four_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("four", round(fixef(four_lagModel)[3,],1)))
+```
+
+```{r four_predictions}
+four_predictions <- as.data.frame(fitted(four_lagModel))
+
+four_childdata <- filter(functionword_relfreq, word=="four", speaker=="child")
+four_childdata$predictions <- four_predictions[, "Estimate"]
+```
+
+```{r four_prediction_Plot} 
+ggplot(four_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Five (Done)
+
+```{r five_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="five")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
-```{r universal, echo=FALSE}
+```{r five_growth_model, include=FALSE}
+five_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="five", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/five_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r five_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("five", round(fixef(five_lagModel)[3,],1)))
+```
+
+```{r five_predictions}
+five_predictions <- as.data.frame(fitted(five_lagModel))
+
+five_childdata <- filter(functionword_relfreq, word=="five", speaker=="child")
+five_childdata$predictions <- five_predictions[, "Estimate"]
+```
+
+```{r five_prediction_Plot} 
+ggplot(five_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Six (Done)
+
+```{r six_numberwords_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="six")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r six_growth_model, include=FALSE}
+six_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="six", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/six_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r six_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("six", round(fixef(six_lagModel)[3,],1)))
+```
+
+```{r six_predictions}
+six_predictions <- as.data.frame(fitted(six_lagModel))
+
+six_childdata <- filter(functionword_relfreq, word=="six", speaker=="child")
+six_childdata$predictions <- six_predictions[, "Estimate"]
+```
+
+```{r six_prediction_Plot} 
+ggplot(six_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Seven (Done)
+
+```{r seven_numberwords_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="seven", age>10)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r seven_growth_model, include=FALSE}
+seven_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="seven", speaker=="child", age>12),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/seven_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r seven_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("seven", round(fixef(seven_lagModel)[3,],1)))
+```
+
+```{r seven_predictions}
+seven_predictions <- as.data.frame(fitted(seven_lagModel))
+
+seven_childdata <- filter(functionword_relfreq, word=="seven", speaker=="child", age>12)
+seven_childdata$predictions <- seven_predictions[, "Estimate"]
+```
+
+```{r seven_prediction_Plot} 
+ggplot(seven_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Eight (Done)
+
+```{r eight_numberwords_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="eight")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r eight_growth_model, include=FALSE}
+eight_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="eight", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/eight_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 50000)
+```
+
+```{r eight_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("eight", round(fixef(eight_lagModel)[3,],1)))
+```
+
+```{r eight_predictions}
+eight_predictions <- as.data.frame(fitted(eight_lagModel))
+
+eight_childdata <- filter(functionword_relfreq, word=="eight", speaker=="child")
+eight_childdata$predictions <- eight_predictions[, "Estimate"]
+```
+
+```{r eight_prediction_Plot} 
+ggplot(eight_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Nine (Done)
+
+```{r nine_numberwords_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="nine")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r nine_growth_model, include=FALSE}
+nine_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="nine", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/nine_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 30000)
+```
+
+```{r nine_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("nine", round(fixef(nine_lagModel)[3,],1)))
+```
+
+```{r nine_predictions}
+nine_predictions <- as.data.frame(fitted(nine_lagModel))
+
+nine_childdata <- filter(functionword_relfreq, word=="nine", speaker=="child")
+nine_childdata$predictions <- nine_predictions[, "Estimate"]
+```
+
+```{r nine_prediction_Plot} 
+ggplot(nine_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Ten (Not Converging)
+
+```{r ten_numberwords_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="ten")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r ten_growth_model, include=FALSE}
+ten_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="ten", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/ten_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 50000)
+```
+
+```{r ten_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("ten", round(fixef(ten_lagModel)[3,],1)))
+```
+
+```{r six_predictions}
+ten_predictions <- as.data.frame(fitted(ten_lagModel))
+
+ten_childdata <- filter(functionword_relfreq, word=="ten", speaker=="child")
+ten_childdata$predictions <- ten_predictions[, "Estimate"]
+```
+
+```{r ten_prediction_Plot} 
+ggplot(ten_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+### Ordinals
+
+#### First (Done)
+
+```{r first_ordinals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="first")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r first_ordinals_growth_model, include=FALSE}
+first_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="first", speaker=="child", age>12),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/first_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r first_ordinals_production}
+age_of_production <-
+  rbind(age_of_production, c("first", round(fixef(first_lagModel)[3,],1)))
+```
+
+```{r first_ordinals_predictions}
+first_predictions <- as.data.frame(fitted(first_lagModel))
+
+first_childdata <- filter(functionword_relfreq, word=="first", speaker=="child", age>12)
+first_childdata$predictions <- first_predictions[, "Estimate"]
+```
+
+```{r first_ordinals_prediction_Plot} 
+ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Last (Done)
+
+```{r last_ordinals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="last")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r last_ordinals_growth_model, include=FALSE}
+last_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="last", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/last_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r last_ordinals_production}
+age_of_production <-
+  rbind(age_of_production, c("last", round(fixef(last_lagModel)[3,],1)))
+```
+
+```{r last_ordinals_predictions}
+last_predictions <- as.data.frame(fitted(last_lagModel))
+
+last_childdata <- filter(functionword_relfreq, word=="last", speaker=="child")
+last_childdata$predictions <- last_predictions[, "Estimate"]
+```
+
+```{r last_ordinals_prediction_Plot} 
+ggplot(last_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Second (Not Converging)
+
+```{r second_ordinals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="second", age>22)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r second_ordinals_growth_model, include=FALSE}
+second_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="second", speaker=="child", age>22),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/second_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r second_ordinals_production}
+age_of_production <-
+  rbind(age_of_production, c("second", round(fixef(second_lagModel)[3,],1)))
+```
+
+```{r second_ordinals_predictions}
+second_predictions <- as.data.frame(fitted(second_lagModel))
+
+second_childdata <- filter(functionword_relfreq, word=="second", speaker=="child", age>12)
+second_childdata$predictions <- second_predictions[, "Estimate"]
+```
+
+```{r second_ordinals_prediction_Plot} 
+ggplot(second_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Third
+
+```{r third_ordinals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="third")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r first_ordinals_growth_model, include=FALSE}
+first_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="first", speaker=="child", age>12),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/first_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r first_ordinals_production}
+age_of_production <-
+  rbind(age_of_production, c("first", round(fixef(first_lagModel)[3,],1)))
+```
+
+```{r first_ordinals_predictions}
+first_predictions <- as.data.frame(fitted(first_lagModel))
+
+first_childdata <- filter(functionword_relfreq, word=="first", speaker=="child", age>12)
+first_childdata$predictions <- first_predictions[, "Estimate"]
+```
+
+```{r first_ordinals_prediction_Plot} 
+ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Fourth (Not enough data)
+
+```{r fourth_ordinals_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="fourth")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker)
 ```
 
 
-## Modals
 
-can, could, need, may, might, should, ought, must, maybe, perhaps, shall, will, would
 
-### Can
+### Modals
+
+may, ought, perhaps, shall (missing because they are too formal)
+
+will, would (missing because they have contracted forms)
+
+#### Can (Done)
 
 Not enough "cannot" to be worth investigating
 
@@ -1499,18 +3111,16 @@ ggplot(can_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw()
-
-saveRDS(can_childdata, "can_childdata.RDS")
 ```
 
-### Could
+#### Could (Done)
 
 ```{r could_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="could")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
 ```{r could_growth_model, include=FALSE}
@@ -1552,7 +3162,7 @@ ggplot(could_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-### Need
+#### Need (Done)
 
 ```{r need_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1602,7 +3212,7 @@ ggplot(need_childdata, aes(x = age, y = cumulative_ppt)) +
 
 
 
-### Maybe
+#### Maybe (Done)
 
 ```{r need_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1613,13 +3223,6 @@ functionword_relfreq %>%
   theme_bw()
 ```
 
-```{r}
-maybe_data <-
-  rbind(
-filter(functionword_relfreq, word=="maybe", speaker=="child"),
-data.frame(word="maybe", age=17, speaker="child", freq=0, total=0, relfreq=0, ppt=0, cum_freq=0, cum_total=0, cumulative_relfreq=0, cumulative_ppt=0))
-```
-
 ```{r maybe_growth_model, include=FALSE}
 maybe_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
@@ -1627,13 +3230,14 @@ maybe_lagModel <- brm(
      growthRate ~ 1,
      lag ~ 1,
      nl = TRUE),
-  data = maybe_data,
+  data = filter(functionword_relfreq, word=="maybe", speaker=="child"),
   prior = c(
     prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(normal(36, 5), nlpar = "lag", lb = 12, ub = 72)
   ),
   file = "../modeling/maybe_lagModel",
+  control = list(adapt_delta = 0.95),
   iter = 10000)
 ```
 
@@ -1658,7 +3262,7 @@ ggplot(maybe_childdata, aes(x = age, y = cumulative_ppt)) +
   coord_cartesian(xlim = c(min(maybe_childdata$age), max(maybe_childdata$age)), ylim = c(min(maybe_childdata$cumulative_ppt), max(maybe_childdata$cumulative_ppt)))
 ```
 
-### Might
+#### Might (Done)
 
 ```{r might_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1668,6 +3272,7 @@ functionword_relfreq %>%
   facet_grid(.~speaker) +
   theme_bw()
 ```
+
 ```{r might_growth_model, include=FALSE}
 might_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
@@ -1707,7 +3312,7 @@ ggplot(might_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Must
+#### Must (Done)
 
 ```{r must_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1717,6 +3322,7 @@ functionword_relfreq %>%
   facet_grid(.~speaker) +
   theme_bw()
 ```
+
 ```{r must_growth_model, include=FALSE}
 must_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
@@ -1754,9 +3360,9 @@ ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw()
 ```
-### Should
+#### Should (Done)
 
-```{r should_comparison_plot, echo=FALSE}
+```{r should_modal_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="should") %>%
   ggplot(aes(age, cumulative_ppt)) +
@@ -1764,21 +3370,22 @@ functionword_relfreq %>%
   facet_grid(.~speaker) +
   theme_bw()
 ```
-```{r must_growth_model, include=FALSE}
+
+```{r should_growth_model, include=FALSE}
 should_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
      upperAsymptote ~ 1,
      growthRate ~ 1,
      lag ~ 1,
      nl = TRUE),
-  data = filter(functionword_relfreq, word=="should", age >20, speaker=="child"),
+  data = filter(functionword_relfreq, word=="should", speaker=="child", age>20),
   prior = c(
     prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
     prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
   file = "../modeling/should_lagModel",
-  control = list(adapt_delta = 0.9),
+  control = list(adapt_delta = 0.98),
   iter = 20000)
 ```
 
@@ -1790,7 +3397,7 @@ age_of_production <-
 ```{r should_predictions}
 should_predictions <- as.data.frame(fitted(should_lagModel))
 
-should_childdata <- filter(functionword_relfreq, word=="should", age>20, speaker=="child")
+should_childdata <- filter(functionword_relfreq, word=="should", speaker=="child", age>20)
 should_childdata$predictions <- should_predictions[, "Estimate"]
 ```
 
@@ -1801,18 +3408,17 @@ ggplot(should_childdata, aes(x = age, y = cumulative_ppt)) +
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw()
 ```
-## Additives
 
-again, too, also, another, other, others, still
+### Additives
 
-### again
+#### Again (Done)
 
 ```{r again_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="again") %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + theme_bw()
 ```
 
 ```{r again_growth_model, include=FALSE}
@@ -1841,12 +3447,12 @@ age_of_production <-
 ```{r again_predictions}
 again_predictions <- as.data.frame(fitted(again_lagModel))
 
-again_childdata <- filter(functionword_relfreq, word=="must", speaker=="child")
+again_childdata <- filter(functionword_relfreq, word=="again", speaker=="child")
 again_childdata$predictions <- again_predictions[, "Estimate"]
 ```
 
 ```{r again_prediction_Plot} 
-ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
+ggplot(again_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
@@ -1854,12 +3460,212 @@ ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
+#### Too (Done)
 
-### Too
-
-```{r too_comparison_plot, echo=FALSE}
+```{r too_plot, echo=FALSE}
 functionword_relfreq %>%
   filter(word=="too") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r too_growth_model, include=FALSE}
+too_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="too", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 3), nlpar = "upperAsymptote", lb = 0, ub = 3),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/too_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 30000)
+```
+
+```{r too_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("too", round(fixef(too_lagModel)[3,],1)))
+```
+
+```{r too_predictions}
+too_predictions <- as.data.frame(fitted(too_lagModel))
+
+too_childdata <- filter(functionword_relfreq, word=="too", speaker=="child")
+too_childdata$predictions <- too_predictions[, "Estimate"]
+```
+
+```{r too_prediction_Plot} 
+ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Also (Done)
+
+```{r also_additives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="also", age>23)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r also_growth_model, include=FALSE}
+also_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="also", speaker=="child", age>23),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/also_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 15000)
+```
+
+```{r also_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("also", round(fixef(also_lagModel)[3,],1)))
+```
+
+```{r also_predictions}
+also_predictions <- as.data.frame(fitted(also_lagModel))
+
+also_childdata <- filter(functionword_relfreq, word=="also", speaker=="child", age>23)
+also_childdata$predictions <- also_predictions[, "Estimate"]
+```
+
+```{r also_prediction_Plot} 
+ggplot(also_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Another (Done)
+
+```{r another_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="another")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r another_growth_model, include=FALSE}
+another_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="another", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 3), nlpar = "upperAsymptote", lb = 0, ub = 3),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/another_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 30000)
+```
+
+```{r another_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("another", round(fixef(another_lagModel)[3,],1)))
+```
+
+```{r another_predictions}
+another_predictions <- as.data.frame(fitted(another_lagModel))
+
+another_childdata <- filter(functionword_relfreq, word=="another", speaker=="child")
+another_childdata$predictions <- another_predictions[, "Estimate"]
+```
+
+```{r another_prediction_Plot} 
+ggplot(another_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Still (Done)
+
+```{r still_additives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="still")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r still_growth_model, include=FALSE}
+still_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="still", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/still_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 15000)
+```
+
+```{r still_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("still", round(fixef(still_lagModel)[3,],1)))
+```
+
+```{r still_predictions}
+still_predictions <- as.data.frame(fitted(still_lagModel))
+
+still_childdata <- filter(functionword_relfreq, word=="still", speaker=="child")
+still_childdata$predictions <- still_predictions[, "Estimate"]
+```
+
+```{r still_prediction_Plot} 
+ggplot(still_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Other (Something is Wrong!)
+
+```{r other_additives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="other")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+```{r another_additives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="another")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker)
@@ -1903,22 +3709,66 @@ ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### Also
+#### Others
 
-```{r universal, echo=FALSE}
+```{r other_additives_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="also")%>%
+  filter(word=="others")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker)
 ```
 
+```{r another_additives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="another")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
 
-## Negative Polarity Items
+```{r too_growth_model, include=FALSE}
+too_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="too", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/too_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 15000)
+```
 
-any, anyone, anything, anyhow, anywhere, anything, anyway, ever, yet
+```{r too_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("too", round(fixef(must_lagModel)[3,],1)))
+```
 
-### Any
+```{r too_predictions}
+too_predictions <- as.data.frame(fitted(too_lagModel))
+
+too_childdata <- filter(functionword_relfreq, word=="too", speaker=="child")
+too_childdata$predictions <- too_predictions[, "Estimate"]
+```
+
+```{r too_prediction_Plot} 
+ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+### Negative Polarity Items
+
+#### Any (Done)
 
 ```{r any_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1966,7 +3816,7 @@ ggplot(any_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-### Yet
+#### Yet (Done)
 
 ```{r any_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -1999,11 +3849,11 @@ age_of_production <-
   rbind(age_of_production, c("yet", round(fixef(yet_lagModel)[3,],1)))
 ```
 
-```{r any_predictions}
+```{r yet_predictions}
 yet_predictions <- as.data.frame(fitted(yet_lagModel))
 
-any_childdata <- filter(functionword_relfreq, word=="yet", speaker=="child")
-any_childdata$predictions <- yet_predictions[, "Estimate"]
+yet_childdata <- filter(functionword_relfreq, word=="yet", speaker=="child")
+yet_childdata$predictions <- yet_predictions[, "Estimate"]
 ```
 
 ```{r yet_prediction_Plot} 
@@ -2014,9 +3864,256 @@ ggplot(yet_childdata, aes(x = age, y = cumulative_ppt)) +
   theme_bw()
 ```
 
-## Exclusives
 
-### Only
+#### Ever (Done)
+
+```{r ever_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="ever")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r ever_growth_model, include=FALSE}
+ever_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="ever", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/ever_lagModel",
+  iter = 8000)
+```
+
+```{r ever_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("ever", round(fixef(ever_lagModel)[3,],1)))
+```
+
+```{r ever_predictions}
+ever_predictions <- as.data.frame(fitted(ever_lagModel))
+
+ever_childdata <- filter(functionword_relfreq, word=="ever", speaker=="child")
+ever_childdata$predictions <- ever_predictions[, "Estimate"]
+```
+
+```{r ever_prediction_Plot} 
+ggplot(ever_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Anyone (Not Converging)
+
+```{r anyone_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="anyone", age>23)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r anyone_growth_model, include=FALSE}
+anyone_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="anyone", speaker=="child", age>23),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/anyone_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 50000)
+```
+
+```{r anyone_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("anyone", round(fixef(anyone_lagModel)[3,],1)))
+```
+
+```{r anyone_predictions}
+anyone_predictions <- as.data.frame(fitted(anyone_lagModel))
+
+anyone_childdata <- filter(functionword_relfreq, word=="anyone", speaker=="child", age>23)
+anyone_childdata$predictions <- anyone_predictions[, "Estimate"]
+```
+
+```{r anyone_prediction_Plot} 
+ggplot(anyone_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Anything (Done)
+
+```{r anything_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="anything")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r anything_growth_model, include=FALSE}
+anything_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="anything", speaker=="child", age>15),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/anything_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r anything_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("anything", round(fixef(anything_lagModel)[3,],1)))
+```
+
+```{r anything_predictions}
+anything_predictions <- as.data.frame(fitted(anything_lagModel))
+
+anything_childdata <- filter(functionword_relfreq, word=="anything", speaker=="child", age>15)
+anything_childdata$predictions <- anything_predictions[, "Estimate"]
+```
+
+```{r anything_prediction_Plot} 
+ggplot(anything_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Anywhere (Done)
+
+```{r anywhere_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="anywhere")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r anywhere_growth_model, include=FALSE}
+anywhere_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="anywhere", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/anywhere_lagModel",
+  iter = 10000)
+```
+
+```{r anywhere_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("anywhere", round(fixef(anywhere_lagModel)[3,],1)))
+```
+
+```{r anywhere_predictions}
+anywhere_predictions <- as.data.frame(fitted(anywhere_lagModel))
+
+anywhere_childdata <- filter(functionword_relfreq, word=="anywhere", speaker=="child")
+anywhere_childdata$predictions <- anywhere_predictions[, "Estimate"]
+```
+
+```{r anywhere_prediction_Plot} 
+ggplot(anywhere_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+
+#### Anyway (Not Converging)
+
+```{r anyway_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="anyway", age>15)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r anyway_growth_model, include=FALSE}
+anyway_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="anyway", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/anyway_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 50000)
+```
+
+```{r anyway_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("anyway", round(fixef(anyway_lagModel)[3,],1)))
+```
+
+```{r anyway_predictions}
+anyway_predictions <- as.data.frame(fitted(anyway_lagModel))
+
+anyway_childdata <- filter(functionword_relfreq, word=="anyway", speaker=="child")
+anyway_childdata$predictions <- anyway_predictions[, "Estimate"]
+```
+
+```{r anyway_prediction_Plot} 
+ggplot(anyway_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+### Exclusives
+
+#### Only (Not Converging)
 
 ```{r any_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -2041,8 +4138,8 @@ only_lagModel <- brm(
     prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
   ),
   file = "../modeling/only_lagModel",
-  control = list(adapt_delta = 0.9),
-  iter = 10000)
+  control = list(adapt_delta = 0.95),
+  iter = 30000)
 ```
 
 ```{r only_age_of_production}
@@ -2051,7 +4148,7 @@ age_of_production <-
 ```
 
 ```{r only_predictions}
-yet_predictions <- as.data.frame(fitted(only_lagModel))
+only_predictions <- as.data.frame(fitted(only_lagModel))
 
 only_childdata <- filter(functionword_relfreq, word=="only", speaker=="child")
 only_childdata$predictions <- only_predictions[, "Estimate"]
@@ -2066,11 +4163,11 @@ ggplot(only_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
-### Just
+#### Just (NA)
 
 ```{r any_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="just")%>%
+  filter(word=="Just")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
@@ -2079,40 +4176,1710 @@ functionword_relfreq %>%
 
 
 
-## Locatives
+### Locatives
 
-on, in, out, up, down, under, above, below, along, over, behind, across, beside, between, beyond, inside, outside, into, near, onto, toward
+#### Here (NA)
+
+```{r here_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="here")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
 
 
-## Pronouns
+#### Up (Done)
+
+```{r up_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="up")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r up_locatives_growth_model, include=FALSE}
+up_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="up", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 15), nlpar = "upperAsymptote", lb = 0, ub = 15),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/up_lagModel",
+  iter = 12000)
+```
+
+```{r up_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("up", round(fixef(up_lagModel)[3,],1)))
+```
+
+```{r up_predictions}
+up_predictions <- as.data.frame(fitted(up_lagModel))
+
+up_childdata <- filter(functionword_relfreq, word=="up", speaker=="child")
+up_childdata$predictions <- up_predictions[, "Estimate"]
+```
+
+```{r up_prediction_Plot} 
+ggplot(up_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
 
 
-## Auxiliaries
+#### On (Done)
+
+```{r on_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="on")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r on_locatives_growth_model, include=FALSE}
+on_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="on", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/on_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r on_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("on", round(fixef(on_lagModel)[3,],1)))
+```
+
+```{r on_predictions}
+on_predictions <- as.data.frame(fitted(on_lagModel))
+
+on_childdata <- filter(functionword_relfreq, word=="on", speaker=="child")
+on_childdata$predictions <- on_predictions[, "Estimate"]
+```
+
+```{r on_prediction_Plot} 
+ggplot(on_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### In (Done)
+
+```{r in_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="in")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+```{r in_locatives_growth_model, include=FALSE}
+in_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="in", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 15), nlpar = "upperAsymptote", lb = 0, ub = 15),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/in_lagModel",
+  iter = 12000)
+```
+
+```{r in_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("in", round(fixef(in_lagModel)[3,],1)))
+```
+
+```{r in_predictions}
+in_predictions <- as.data.frame(fitted(in_lagModel))
+
+in_childdata <- filter(functionword_relfreq, word=="in", speaker=="child")
+in_childdata$predictions <- in_predictions[, "Estimate"]
+```
+
+```{r in_prediction_Plot} 
+ggplot(in_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Out (Done)
+
+```{r out_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="out")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r out_locatives_growth_model, include=FALSE}
+out_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="out", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 6), nlpar = "upperAsymptote", lb = 0, ub = 6),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/out_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r out_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("out", round(fixef(on_lagModel)[3,],1)))
+```
+
+```{r out_predictions}
+out_predictions <- as.data.frame(fitted(out_lagModel))
+
+out_childdata <- filter(functionword_relfreq, word=="out", speaker=="child")
+out_childdata$predictions <- out_predictions[, "Estimate"]
+```
+
+```{r on_prediction_Plot} 
+ggplot(out_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Outside (No Fit)
+
+```{r outside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="outside")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Inside (No Fit)
+
+```{r inside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="inside")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Down (Done)
+
+```{r down_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="down")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r down_locatives_growth_model, include=FALSE}
+down_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="down", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/down_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r down_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("down", round(fixef(down_lagModel)[3,],1)))
+```
+
+```{r down_predictions}
+down_predictions <- as.data.frame(fitted(down_lagModel))
+
+down_childdata <- filter(functionword_relfreq, word=="down", speaker=="child")
+down_childdata$predictions <- down_predictions[, "Estimate"]
+```
+
+```{r down_prediction_Plot} 
+ggplot(down_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Into (Done)
+
+```{r outside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="into")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r into_locatives_growth_model, include=FALSE}
+into_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="into", speaker=="child", age>15),
+  prior = c(
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/into_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r into_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("into", round(fixef(into_lagModel)[3,],1)))
+```
+
+```{r into_predictions}
+into_predictions <- as.data.frame(fitted(into_lagModel))
+
+into_childdata <- filter(functionword_relfreq, word=="into", speaker=="child", age>15)
+into_childdata$predictions <- into_predictions[, "Estimate"]
+```
+
+```{r into_prediction_Plot} 
+ggplot(into_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Under (Done)
+
+```{r outside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="under")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r under_locatives_growth_model, include=FALSE}
+under_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="under", speaker=="child", age>15),
+  prior = c(
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/under_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r under_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("under", round(fixef(under_lagModel)[3,],1)))
+```
+
+```{r under_predictions}
+under_predictions <- as.data.frame(fitted(under_lagModel))
+
+under_childdata <- filter(functionword_relfreq, word=="under", speaker=="child", age>15)
+under_childdata$predictions <- under_predictions[, "Estimate"]
+```
+
+```{r under_prediction_Plot} 
+ggplot(under_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Above (Not Enough Data)
+
+```{r outside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="above")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Below (Not Enough Data)
+
+```{r outside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="below")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+
+
+#### Over (Done)
+
+```{r over_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="over", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r over_locatives_growth_model, include=FALSE}
+over_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="over", speaker=="child", age>12),
+  prior = c(
+    prior(uniform(0, 5), nlpar = "upperAsymptote", lb = 0, ub = 5),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/over_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r over_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("over", round(fixef(over_lagModel)[3,],1)))
+```
+
+```{r over_predictions}
+over_predictions <- as.data.frame(fitted(over_lagModel))
+
+over_childdata <- filter(functionword_relfreq, word=="over", speaker=="child", age>12)
+over_childdata$predictions <- over_predictions[, "Estimate"]
+```
+
+```{r over_prediction_Plot} 
+ggplot(over_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Behind (Not Converging)
+
+```{r behind_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="behind")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r behind_locatives_growth_model, include=FALSE}
+behind_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="behind", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/behind_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r behind_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("over", round(fixef(behind_lagModel)[3,],1)))
+```
+
+```{r behind_predictions}
+behind_predictions <- as.data.frame(fitted(behind_lagModel))
+
+behind_childdata <- filter(functionword_relfreq, word=="behind", speaker=="child")
+behind_childdata$predictions <- behind_predictions[, "Estimate"]
+```
+
+```{r behind_prediction_Plot} 
+ggplot(behind_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Beside (Not Enough Data)
+
+```{r beside_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="beside")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Between (Not Enough Data)
+
+```{r between_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="between")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Beyond (not enough data)
+
+```{r beyond_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="beyond")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Near (Not Converging)
+
+```{r near_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="near")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r near_locatives_growth_model, include=FALSE}
+near_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="near", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/near_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r near_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("near", round(fixef(near_lagModel)[3,],1)))
+```
+
+```{r near_predictions}
+near_predictions <- as.data.frame(fitted(near_lagModel))
+
+near_childdata <- filter(functionword_relfreq, word=="near", speaker=="child")
+near_childdata$predictions <- near_predictions[, "Estimate"]
+```
+
+```{r near_prediction_Plot} 
+ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Onto 
+
+```{r onto_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="onto", age>22)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r onto_locatives_growth_model, include=FALSE}
+near_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="onto", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/onto_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r onto_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("onto", round(fixef(onto_lagModel)[3,],1)))
+```
+
+```{r onto_predictions}
+onto_predictions <- as.data.frame(fitted(onto_lagModel))
+
+onto_childdata <- filter(functionword_relfreq, word=="onto", speaker=="child")
+onto_childdata$predictions <- near_predictions[, "Estimate"]
+```
+
+```{r onto_prediction_Plot} 
+ggplot(onto_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Toward (not enough data)
+
+```{r toward_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="toward")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Along
+
+```{r along_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="along")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r near_locatives_growth_model, include=FALSE}
+near_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="near", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/near_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r near_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("near", round(fixef(near_lagModel)[3,],1)))
+```
+
+```{r near_predictions}
+near_predictions <- as.data.frame(fitted(near_lagModel))
+
+near_childdata <- filter(functionword_relfreq, word=="near", speaker=="child")
+near_childdata$predictions <- near_predictions[, "Estimate"]
+```
+
+```{r near_prediction_Plot} 
+ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Across
+
+```{r across_locatives_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="across")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r near_locatives_growth_model, include=FALSE}
+near_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="near", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/near_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r near_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("near", round(fixef(near_lagModel)[3,],1)))
+```
+
+```{r near_predictions}
+near_predictions <- as.data.frame(fitted(near_lagModel))
+
+near_childdata <- filter(functionword_relfreq, word=="near", speaker=="child")
+near_childdata$predictions <- near_predictions[, "Estimate"]
+```
+
+```{r near_prediction_Plot} 
+ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+### Other
+
+#### So (NA)
+
+```{r usually_temporalQuant_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="so")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+#### Either (Done)
+
+```{r either_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="either")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r either_growth_model, include=FALSE}
+either_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="either", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/either_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r either_production}
+age_of_production <-
+  rbind(age_of_production, c("either", round(fixef(either_lagModel)[3,],1)))
+```
+
+```{r either_predictions}
+either_predictions <- as.data.frame(fitted(either_lagModel))
+
+either_childdata <- filter(functionword_relfreq, word=="either", speaker=="child")
+either_childdata$predictions <- either_predictions[, "Estimate"]
+```
+
+```{r either_prediction_Plot} 
+ggplot(either_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Neither (Not enough data)
+
+```{r neither_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="neither")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+#### Else (Not Converging)
+
+```{r else_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="else")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r else_growth_model, include=FALSE}
+else_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="else", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/else_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r else_production}
+age_of_production <-
+  rbind(age_of_production, c("else", round(fixef(else_lagModel)[3,],1)))
+```
+
+```{r else_predictions}
+else_predictions <- as.data.frame(fitted(else_lagModel))
+
+else_childdata <- filter(functionword_relfreq, word=="else", speaker=="child")
+else_childdata$predictions <- else_predictions[, "Estimate"]
+```
+
+```{r else_prediction_Plot} 
+ggplot(else_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Almost (Done)
+
+```{r almost_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="almost")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r almost_growth_model, include=FALSE}
+almost_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="almost", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/almost_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r almost_production}
+age_of_production <-
+  rbind(age_of_production, c("almost", round(fixef(almost_lagModel)[3,],1)))
+```
+
+```{r almost_predictions}
+almost_predictions <- as.data.frame(fitted(almost_lagModel))
+
+almost_childdata <- filter(functionword_relfreq, word=="almost", speaker=="child")
+almost_childdata$predictions <- almost_predictions[, "Estimate"]
+```
+
+```{r almost_prediction_Plot} 
+ggplot(almost_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Already (Not Converging)
+
+```{r already_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="already", age>21)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+```{r already_growth_model, include=FALSE}
+already_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="already", speaker=="child", age>21),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/already_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 20000)
+```
+
+```{r already_production}
+age_of_production <-
+  rbind(age_of_production, c("already", round(fixef(already_lagModel)[3,],1)))
+```
+
+```{r already_predictions}
+already_predictions <- as.data.frame(fitted(already_lagModel))
+
+already_childdata <- filter(functionword_relfreq, word=="already", speaker=="child", age>20)
+already_childdata$predictions <- already_predictions[, "Estimate"]
+```
+
+```{r already_prediction_Plot} 
+ggplot(already_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Except (Done)
+
+```{r except_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="except")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r except_growth_model, include=FALSE}
+except_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="except", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/except_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r except_production}
+age_of_production <-
+  rbind(age_of_production, c("except", round(fixef(except_lagModel)[3,],1)))
+```
+
+```{r except_predictions}
+except_predictions <- as.data.frame(fitted(except_lagModel))
+
+except_childdata <- filter(functionword_relfreq, word=="except", speaker=="child")
+except_childdata$predictions <- except_predictions[, "Estimate"]
+```
+
+```{r except_prediction_Plot} 
+ggplot(except_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### For (Done)
+
+```{r for_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="for")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r for_growth_model, include=FALSE}
+for_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="for", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 6), nlpar = "upperAsymptote", lb = 0, ub = 6),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/for_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r for_production}
+age_of_production <-
+  rbind(age_of_production, c("for", round(fixef(for_lagModel)[3,],1)))
+```
+
+```{r for_predictions}
+for_predictions <- as.data.frame(fitted(for_lagModel))
+
+for_childdata <- filter(functionword_relfreq, word=="for", speaker=="child")
+for_childdata$predictions <- for_predictions[, "Estimate"]
+```
+
+```{r for_prediction_Plot} 
+ggplot(for_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### From (Done)
+
+```{r from_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="from")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r from_growth_model, include=FALSE}
+from_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="from", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/from_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r from_production}
+age_of_production <-
+  rbind(age_of_production, c("from", round(fixef(from_lagModel)[3,],1)))
+```
+
+```{r from_predictions}
+from_predictions <- as.data.frame(fitted(from_lagModel))
+
+from_childdata <- filter(functionword_relfreq, word=="from", speaker=="child")
+from_childdata$predictions <- from_predictions[, "Estimate"]
+```
+
+```{r from_prediction_Plot} 
+ggplot(from_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### To (NA)
+
+```{r to_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="to")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+```{r to_growth_model, include=FALSE}
+to_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="to", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/to_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r to_production}
+age_of_production <-
+  rbind(age_of_production, c("to", round(fixef(to_lagModel)[3,],1)))
+```
+
+```{r to_predictions}
+to_predictions <- as.data.frame(fitted(to_lagModel))
+
+to_childdata <- filter(functionword_relfreq, word=="to", speaker=="child")
+to_childdata$predictions <- to_predictions[, "Estimate"]
+```
+
+```{r to_prediction_Plot} 
+ggplot(to_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### By (Done)
+
+```{r by_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="by")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r by_growth_model, include=FALSE}
+by_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="by", speaker=="child", age>13),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/by_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r by_production}
+age_of_production <-
+  rbind(age_of_production, c("by", round(fixef(by_lagModel)[3,],1)))
+```
+
+```{r by_predictions}
+by_predictions <- as.data.frame(fitted(by_lagModel))
+
+by_childdata <- filter(functionword_relfreq, word=="by", speaker=="child", age>13)
+by_childdata$predictions <- by_predictions[, "Estimate"]
+```
+
+```{r by_prediction_Plot} 
+ggplot(by_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Very (Done)
+
+```{r Very_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="very")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r very_growth_model, include=FALSE}
+very_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="very", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/very_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r either_production}
+age_of_production <-
+  rbind(age_of_production, c("very", round(fixef(very_lagModel)[3,],1)))
+```
+
+```{r very_predictions}
+very_predictions <- as.data.frame(fitted(very_lagModel))
+
+very_childdata <- filter(functionword_relfreq, word=="very", speaker=="child")
+very_childdata$predictions <- very_predictions[, "Estimate"]
+```
+
+```{r very_prediction_Plot} 
+ggplot(very_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_l (Dine(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### With (Done)
+
+```{r with_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="with")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r with_growth_model, include=FALSE}
+with_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="with", speaker=="child", age>10),
+  prior = c(
+    prior(uniform(0, 5), nlpar = "upperAsymptote", lb = 0, ub = 5),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/with_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r with_production}
+age_of_production <-
+  rbind(age_of_production, c("with", round(fixef(with_lagModel)[3,],1)))
+```
+
+```{r with_predictions}
+with_predictions <- as.data.frame(fitted(with_lagModel))
+
+with_childdata <- filter(functionword_relfreq, word=="with", speaker=="child", age>10)
+with_childdata$predictions <- with_predictions[, "Estimate"]
+```
+
+```{r with_prediction_Plot} 
+ggplot(with_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Without (Done)
+
+```{r without_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="without")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r without_growth_model, include=FALSE}
+without_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="without", speaker=="child", age>25),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/without_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r without_production}
+age_of_production <-
+  rbind(age_of_production, c("without", round(fixef(either_lagModel)[3,],1)))
+```
+
+```{r without_predictions}
+without_predictions <- as.data.frame(fitted(without_lagModel))
+
+without_childdata <- filter(functionword_relfreq, word=="without", speaker=="child", age>25)
+without_childdata$predictions <- without_predictions[, "Estimate"]
+```
+
+```{r without_prediction_Plot} 
+ggplot(without_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Instead
+
+```{r instead_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="instead", age>23)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+```{r instead_growth_model, include=FALSE}
+instead_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="instead", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/instead_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r instead_production}
+age_of_production <-
+  rbind(age_of_production, c("instead", round(fixef(either_lagModel)[3,],1)))
+```
+
+```{r instead_predictions}
+instead_predictions <- as.data.frame(fitted(instead_lagModel))
+
+instead_childdata <- filter(functionword_relfreq, word=="instead", speaker=="child")
+instead_childdata$predictions <- instead_predictions[, "Estimate"]
+```
+
+```{r instead_prediction_Plot} 
+ggplot(instead_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### Such
+
+```{r such_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="such")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+
+```{r such_growth_model, include=FALSE}
+such_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="such", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/such_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r such_production}
+age_of_production <-
+  rbind(age_of_production, c("such", round(fixef(such_lagModel)[3,],1)))
+```
+
+```{r such_predictions}
+such_predictions <- as.data.frame(fitted(such_lagModel))
+
+such_childdata <- filter(functionword_relfreq, word=="such", speaker=="child")
+such_childdata$predictions <- such_predictions[, "Estimate"]
+```
+
+```{r either_prediction_Plot} 
+ggplot(such_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+
+#### About (Done)
+
+```{r about_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="about")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r about_growth_model, include=FALSE}
+about_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="about", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/about_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r either_production}
+age_of_production <-
+  rbind(age_of_production, c("about", round(fixef(about_lagModel)[3,],1)))
+```
+
+```{r about_predictions}
+about_predictions <- as.data.frame(fitted(about_lagModel))
+
+about_childdata <- filter(functionword_relfreq, word=="about", speaker=="child")
+about_childdata$predictions <- about_predictions[, "Estimate"]
+```
+
+```{r either_prediction_Plot} 
+ggplot(about_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_lin (e(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  theme_bw()
+```
+
+#### Whether (Not enough data)
+
+```{r whether_other_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="whether")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+
+### Pronouns
+
+#### Mine
+
+```{r mine_pronoun_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="mine")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### Me
+
+```{r me_pronoun_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="me")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### I
+
+```{r i_pronoun_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="he")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### You
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="you")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
+#### Your
+
+#### Yours
+
+#### We
+
+#### Our
+
+#### Ours
+
+#### She
+
+#### Her
+
+#### Hers
+
+#### He
+
+#### His
+
+#### They
+
+#### Their
+
+#### Theirs
+
+#### It
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="it")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+#### Its
+
+```{r its_pronoun_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="its")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker)
+```
+
+
+
+### Auxiliaries
 
 am, is, are, do, does
 
 
-## Other
-
-either, neither, whether as, else, almost, already, except, for, from, instead, such, with, without, about, by, very, to
-
 # Age of Production Plot
 
 ```{r}
-age_of_production2 <- age_of_production %>%
+age_of_production <- 
+  age_of_production %>%
   mutate(word = fct_reorder(word, Estimate), 
          Estimate = as.numeric(age_of_production$Estimate),
          Q2.5 = as.numeric(age_of_production$Q2.5),
          Q97.5 = as.numeric(age_of_production$Q97.5))
 
-saveRDS(age_of_production2, "age_of_production.RDS")
+#saveRDS(age_of_production, "age_of_production.RDS")
+```
 
+```{r}
+age_of_production <- readRDS("age_of_production.RDS")
 
-age_of_production2 %>%
+age_of_production %>%
   ggplot(aes(x=Estimate, y=word)) +
   geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
   theme_bw() + 
   theme(axis.text.y = element_text(size = 14), xlab="age") + 
   labs(x = "Age (Months)", y="")
-
 ```
+
+
+# Wordbank MB-CDI Function Word Trajectories
+
+## English Funtion Word Trajectory Plots
+
+```{r}
+cdi_data <- 
+  read_csv("../raw_data/wordbank_functionword_trajectories.csv") %>%
+  gather("word", "proportion", a:how)
+
+#write_csv(cdi_data, "../processed_data/cdi_functionwords.csv")
+```
+
+```{r functionWordPlots}
+cdi_data <- read_csv("../processed_data/cdi_functionwords.csv")
+
+# Get the last point for each line
+last_points <- cdi_data %>%
+  group_by(word) %>%
+  slice_max(order_by = age, n = 1)
+
+# Plot with labels at the end of each line, avoiding overlap
+ggplot(cdi_data, aes(x = age, y = proportion, colour = word)) +
+  geom_line() +
+  geom_text_repel(data = last_points, aes(label = word), 
+                  nudge_x = 1, # Horizontal nudging for clarity
+                  direction = "y", # Allow vertical adjustment
+                  color = "black", # Label color
+                  show.legend = FALSE) + # Suppress legend
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1)) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 14), legend.position = "none") +
+  labs(x = "Age (Months)", y = "Proportion")
+```
+
+## Onset Age of Production Estimates
+
+```{r}
+CDI_onset_age <- 
+  cdi_data %>%
+  group_by(word) %>%
+  summarise(
+    age_above_0.1 = min(age[proportion >= 0.1], na.rm = TRUE),
+    age_above_0.15 = min(age[proportion >= 0.15], na.rm = TRUE),
+    age_above_0.2 = min(age[proportion >= 0.2], na.rm = TRUE)
+  )
+```
+
+```{r}
+CDI_onset_age %>%
+  ggplot(aes(x = age_above_0.15, y = reorder(word, age_above_0.15))) +
+  geom_pointrange(aes(xmin = age_above_0.1, xmax = age_above_0.2)) +
+  theme_bw() + 
+  theme(axis.text.y = element_text(size = 14), xlab = "age") + 
+  labs(x = "Age (Months)", y = "") +
+  scale_x_continuous(breaks = seq(min(CDI_onset_age$age_above_0.15), max(CDI_onset_age$age_above_0.15), by = 1))
+```
+

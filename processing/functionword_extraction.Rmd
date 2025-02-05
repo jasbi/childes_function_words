@@ -209,14 +209,13 @@ c('i', 'me', 'my', 'myself', 'we', 'our', 'ours',
 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn',
  "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 
 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't") %>% length()
-
 ```
 
 ```{r NegationWords}
 english_tokens$word <- "content"
 
 function_words <- c(
-  "no", "not", "cannot", "ain't", "isn't", "amn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "shan't", "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mayn't", "mightn't", "wouldn't", "mustn't", 
+  "no", "not", "yes", "cannot", "ain't", "isn't", "amn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "shan't", "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mayn't", "mightn't", "wouldn't", "mustn't", "don't",
   "and", "or", "if", "nor", "therefore", 
   "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", 
   "more", "less", "much", 
@@ -229,7 +228,7 @@ function_words <- c(
   "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", 
   "while", "after", "before", "then", "until", "since", "whenever", "during", 
   "who", "when", "what", "whose", "where", "how", "why", "whom", 
-  "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "inside", "outside", "into", "near", "onto", "toward", 
+  "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "inside", "outside", "into", "near", "onto", "toward", "to", "here", "at",
   "because", 
   "but", "although",
   "am", "is", "are",
@@ -238,7 +237,8 @@ function_words <- c(
   "again", "too", "also", "another", "other", "others", "still",
   "only", "just",
   "even", "indeed",
-  "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless"
+  "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless",
+  "so", "now"
   )
 
 for (x in function_words){
@@ -372,7 +372,7 @@ for (x in Wh){
 Locatives:
 
 ```{r}
-locatives <- c("on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward") 
+locatives <- c("on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here") 
 
 for (x in locatives){
   english_tokens$word_category[english_tokens$gloss==x] <- "Locatives"

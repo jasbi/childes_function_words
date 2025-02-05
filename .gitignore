@@ -44,9 +44,11 @@ vignettes/*.pdf
 .RDataTmp
 */.DS_Store
 */.RData
+.RDataTmp1
 */.Rhistory
 
 
 /modeling/
 raw_data/english_tokens.feather
 processed_data/english_tokens_processed.feather
+literature/

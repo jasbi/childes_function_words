@@ -5801,6 +5801,23 @@ functionword_relfreq %>%
 am, is, are, do, does
 
 
+# phoneme length - Aaron Pilapil
+```{r library installations}
+library(dplyr)
+library(phonR)
+```
+```{r}
+phoneme_lengths <- data.frame(
+  word = c("no", "not", "and", "or", "if", "all", "every", "some", "both", "many", "most", "none", "more","less", "the", "a", "this", "that", "these", "those", "what", "who", "when", "where", "why", "how", "one", "two", "three", "four", "five", "nine", "can", "could", "need", "maybe", "might", "must", "should", "again", "too", "also", "any", "yet", "only", "just"),
+  
+  phoneme_length = c(3, 3, 3, 2, 2, 2, 4, 3, 4, 4, 5, 3, 3, 3, 2, 1, 3, 3, 3, 4, 4, 2, 3, 5, 4, 3, 3, 2, 3, 3, 4 , 4, 3, 3, 3, 5, 4, 4, 3, 4, 2, 5, 3, 3, 5, 4)
+)
+
+age_of_production <- age_of_production %>%
+  left_join(phoneme_lengths, by = "word")
+
+```
+
 # Age of Production Plot
 
 ```{r}

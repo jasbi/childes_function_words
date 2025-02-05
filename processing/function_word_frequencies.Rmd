@@ -1,0 +1,49 @@
+---
+title: "function_word_frequencies"
+author: "Winson Yu"
+date: "2024-12-11"
+output: html_document
+---
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(feather)
+library(brms)
+library(ggeffects)
+```
+
+Read in English processed tokens (created by functionword_extractions.Rmd processing script)
+```{r cars}
+english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+```
+
+Create function word frequency data frame
+```{r}
+# Filter for function words in parent speech and calculate frequencies
+library(dplyr)
+
+function_word_frequencies <- english_tokens_processed %>%
+  # Filter for function words and parent speech
+  filter(syncategory == "Function",
+         speaker == "parent") %>%
+  # Group by the words and their part of speech
+  group_by(gloss, part_of_speech) %>%
+  # Count occurrences of each function word
+  summarise(word_count = n(), .groups = "drop") %>%
+  # Calculate the denominator (total words in parent speech)
+  mutate(
+    total_parent_words = nrow(
+      english_tokens_processed %>%
+        filter(speaker == "parent")
+    )
+  ) %>%
+  # Calculate relative frequency
+  mutate(input_frequency = word_count / total_parent_words) %>%
+  # Select and arrange final columns
+  select(gloss, input_frequency, part_of_speech) %>%
+  # Sort by frequency in descending order
+  arrange(desc(input_frequency))
+
+write_feather(function_word_frequencies, "../processed_data/function_word_frequencies.feather")
+```
+

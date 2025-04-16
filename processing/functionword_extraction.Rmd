@@ -56,6 +56,43 @@ unintels <- nrow(english_tokens)
 n_chi_unintels <-
   english_tokens$target_child_id %>% unique() %>% length()
 
+## babbling ##
+
+# remove babbles
+english_tokens <-
+  all_english_tokens %>%
+  filter(part_of_speech != "bab")
+
+# babbles that slipped by 
+babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+
+# remove all glosses that are just a letter, except for A, a, I, and i
+alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
+# filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
+
+#filter out babbles
+english_tokens <- 
+  all_english_tokens %>%
+  filter(!gloss %in% babbles)
+
+
+# remove other unlikely words/transcrption mistakes
+#vector of ids
+unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
+#first three are "vocalizes" or "vocalizing", "classic", "vocalizes", "references", "transcribed"
+
+
+english_tokens <- 
+  all_english_tokens %>%
+  filter(!id %in% unreasonable_id)
+
+# count the tokens after excluding babbles and unreasonable words
+babble_unreasonable <- nrow(english_tokens)
+
+# number of children after excluding babbles/unreasonable tokens
+n_chi_babble_unreason <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
 # remove NAs target_child_age
 english_tokens <- 
   english_tokens %>% drop_na(target_child_age)
@@ -157,6 +194,66 @@ english_tokens$gloss <- english_tokens$gloss %>% tolower()
 ## Contractions
 
 >>> Aaron
+
+```{r}
+# Define the patterns and exceptions
+patterns <- c("n't", "'ll", "'s", "'d", "'m")
+exceptions <- c("can't", "won't", "cannot")
+
+process_words <- function(df, patterns, exceptions) {
+  new_df <- data.frame()  # Initialize an empty data frame
+  
+  for (i in 1:nrow(df)) {
+    row_i <- df[i, ]
+    matched_pattern <- NA  # To store a found pattern, if any
+    
+    # Check if the gloss is an exception
+    if(row_i$gloss %in% exceptions) {
+      if(row_i$gloss == "can't") {
+        # Remove only "'t" from "can't" to leave "can"
+        row_i$gloss <- sub("'t$", "", row_i$gloss)
+        matched_pattern <- "n't"
+      } 
+      else if (row_i$gloss == "cannot"){
+        # remove not, leave can
+        row_i$gloss <- sub("not$", "", row_i$gloss)
+        matched_pattern <- "not"
+      }
+      else if (row_i$gloss == "won't") {
+        # For "won't", do nothing and leave it unchanged
+        matched_pattern <- NA
+      }
+    } else {
+      # Process normally: check if gloss ends with any of the specified patterns
+      for (p in patterns) {
+        if (grepl(paste0(p, "$"), row_i$gloss)) {
+          row_i$gloss <- sub(paste0(p, "$"), "", row_i$gloss)
+          matched_pattern <- p
+          break  # Stop after the first matching pattern
+        }
+      }
+    }
+    
+    # Append the (possibly modified) original row
+    new_df <- rbind(new_df, row_i)
+    
+    # If a pattern was found (or set in the exception), add a new row beneath with that pattern
+    if (!is.na(matched_pattern)) {
+      new_row <- df[i, ]
+      new_row$gloss <- matched_pattern
+      new_df <- rbind(new_df, new_row)
+    }
+  }
+  
+  rownames(new_df) <- NULL  # Reset row names
+  return(new_df)
+}
+
+# test_english_tokens <- english_tokens %>% slice(5000:7000)
+
+contraction_tokens <- process_words(test_english_tokens, patterns, exceptions)
+
+```
 
 Also make sure to separate "cannot" into "can" and "not". Make sure all types of negation contractions are stored as "nt". Make sure "won't" remains as one token because it is not really a contraction of will+not. 
 

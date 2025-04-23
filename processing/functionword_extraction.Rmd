@@ -33,9 +33,6 @@ all_english_tokens <- get_tokens(collection = c("Eng-NA","Eng-UK"),
 
 The following script cleans up the data to exclude: unintelligible tokens and tokens above 72 months of the child's age. All exclusions are stored in a file called exclusions.csv
 
->>>> Aaron: Edit the code below to exclude babbling, count the number of babbling tokens and report, also exclude unreasonable early productions if you can argue there are any 
-
-
 ```{r exclusionsTokens}
 # count the tokens before exclusions
 initial <- nrow(all_english_tokens)

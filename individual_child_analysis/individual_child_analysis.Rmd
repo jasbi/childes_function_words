@@ -1,0 +1,21 @@
+---
+title: "Individual_Child_Analysis"
+author: "Masoud Jasbi & Debbie Odufuwa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Individual Child Stats
+
+```{r ChildesDBimports}
+#Getting data from 7 corpor with 25 children
+individual_english_tokens <- get_tokens(corpus = c("Braunwald", "Brown", "Providence", "MacWhinney", "Sachs", "ComptonPater","Sekali"), 
+                                 role = c("target_child","Mother", "Father"), 
+                                 token = "*")
+```
+
+#

@@ -21,10 +21,6 @@ We use the package `r childesr` to access the data in the CHILDES database. The 
 all_english_tokens <- get_tokens(collection = c("Eng-NA","Eng-UK"), 
                           role = c("target_child","Mother", "Father"),
                           token = "*")
-
-# Import statistics on the speakers in CHILDES
-#speaker_stats <- get_speaker_statistics(collection = c("Eng-NA","Eng-UK"), 
-#                                        role = c("target_child","Mother", "Father"))
 ```
 
 # Token Processing
@@ -64,7 +60,7 @@ english_tokens <-
 babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
 
 # remove all glosses that are just a letter, except for A, a, I, and i
-alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
+#alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
 # filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
 
 #filter out babbles
@@ -72,12 +68,10 @@ english_tokens <-
   all_english_tokens %>%
   filter(!gloss %in% babbles)
 
-
-# remove other unlikely words/transcrption mistakes
+# remove other unlikely words/transcription mistakes
 #vector of ids
 unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
 #first three are "vocalizes" or "vocalizing", "classic", "vocalizes", "references", "transcribed"
-
 
 english_tokens <- 
   all_english_tokens %>%
@@ -118,13 +112,16 @@ exclusions <-
   data.frame (
     initial = initial,
     after_unintels = unintels,
+    after_babbles = babble_unreasonable,
     after_nas = nas,
     after_age = age_ex,
     unintelligible = initial - unintels,
-    missing = unintels - nas,
+    babbles = unintels - babble_unreasonable,
+    missing = babble_unreasonable - nas,
     age = nas - age_ex,
     n_chi_total = n_chi_initial,
     n_chi_unintels = n_chi_unintels,
+    n_chi_babble = n_chi_babble_unreason,
     n_chi_nas = n_chi_nas,
     n_chi_age = n_chi_age)
 ```
@@ -133,7 +130,6 @@ exclusions <-
 # save the exclusion data in a file as well as the final data
 write_csv(exclusions, "../raw_data/token_exclusions.csv")
 write_feather(english_tokens, "../raw_data/english_tokens.feather")
-#write_csv(speaker_stats, "../raw_data/speaker_stats.csv")
 ```
 
 ## Coding Speaker Roles

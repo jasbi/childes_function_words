@@ -1,2 +1,2 @@
-initial,after_unintels,after_nas,after_age,unintelligible,missing,age,n_chi_total,n_chi_unintels,n_chi_nas,n_chi_age
-17898672,17411335,16306010,15824850,487337,1105325,481160,1254,1249,1245,1146
+initial,after_unintels,after_babbles,after_nas,after_age,unintelligible,babbles,missing,age,n_chi_total,n_chi_unintels,n_chi_babble,n_chi_nas,n_chi_age
+17898672,17411335,17898663,16783961,16294147,487337,-487328,1114702,489814,1254,1249,1254,1250,1151

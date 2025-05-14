@@ -23,6 +23,12 @@ all_english_tokens <- get_tokens(collection = c("Eng-NA","Eng-UK"),
                           token = "*")
 ```
 
+we should make sure all words are in lower case:
+
+```{r lowerCase}
+all_english_tokens$gloss <- all_english_tokens$gloss %>% tolower()
+```
+
 # Token Processing
 
 ## Exclusions
@@ -53,7 +59,7 @@ n_chi_unintels <-
 
 # remove babbles
 english_tokens <-
-  all_english_tokens %>%
+  english_tokens %>%
   filter(part_of_speech != "bab")
 
 # babbles that slipped by 
@@ -65,7 +71,7 @@ babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "
 
 #filter out babbles
 english_tokens <- 
-  all_english_tokens %>%
+  english_tokens %>%
   filter(!gloss %in% babbles)
 
 # remove other unlikely words/transcription mistakes
@@ -74,7 +80,7 @@ unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373,
 #first three are "vocalizes" or "vocalizing", "classic", "vocalizes", "references", "transcribed"
 
 english_tokens <- 
-  all_english_tokens %>%
+  english_tokens %>%
   filter(!id %in% unreasonable_id)
 
 # count the tokens after excluding babbles and unreasonable words
@@ -128,7 +134,7 @@ exclusions <-
 
 ```{r savingData}
 # save the exclusion data in a file as well as the final data
-write_csv(exclusions, "../raw_data/token_exclusions.csv")
+#write_csv(exclusions, "../raw_data/token_exclusions.csv")
 write_feather(english_tokens, "../raw_data/english_tokens.feather")
 ```
 
@@ -176,17 +182,9 @@ english_tokens$utterance_type <-
          )
 ```
 
-## Removing Case Sensitivity
-
-we should make sure all words are in lower case:
-
-```{r lowerCase}
-english_tokens$gloss <- english_tokens$gloss %>% tolower()
-```
-
 ## Contractions
 
->>> Aaron
+This chunk of code separates contracted morphemes in the "gloss" column, then adds it as a separate row with the same information as the ones in the original row. The purpose of it is to count contractions separately as functional morphemes. It takes a long time to run though!
 
 ```{r}
 # Define the patterns and exceptions
@@ -244,7 +242,7 @@ process_words <- function(df, patterns, exceptions) {
 
 # test_english_tokens <- english_tokens %>% slice(5000:7000)
 
-contraction_tokens <- process_words(test_english_tokens, patterns, exceptions)
+contraction_tokens <- process_words(english_tokens, patterns, exceptions)
 
 ```
 
@@ -290,7 +288,7 @@ c('couldn', "couldn't",
 ```{r FunctionWords}
 english_tokens$word <- "content"
 
-function_words <- c("no", "not", "nt", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+function_words <- c("no", "not", "n't", "'ll", "'s", "'d", "'m", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
 
 for (x in function_words){
   english_tokens$word[english_tokens$gloss==x] <- x
@@ -302,7 +300,7 @@ First we start with marking content words and selecting logical connectives:
 ```{r logicalConnectives}
 english_tokens$word_category <- "content"
 
-logical_connectives <- c("no", "not", "nt", "and", "or", "if", "nor", "therefore") 
+logical_connectives <- c("no", "not", "n't", "and", "or", "if", "nor", "therefore") 
 
 for (x in logical_connectives){
   english_tokens$word_category[english_tokens$gloss==x] <- "Logicals"
@@ -505,7 +503,7 @@ for (x in focus){
 Other:
 
 ```{r}
-other <- c("either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against") 
+other <- c("either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against") 
 
 for (x in other){
   english_tokens$word_category[english_tokens$gloss==x] <- "Other"
@@ -522,35 +520,3 @@ english_tokens$syncategory[english_tokens$word_category=="content"] <- "Content"
 ```{r save_dataframe}
 write_feather(english_tokens, "../processed_data/english_tokens_processed.feather")
 ```
-
-
-# Utterance Processing
-
-## Loading Utterance Data from Childes-DB
-
-We use the package `r childesr` to access the data in the CHILDES database. The code below downloades and stores all utterances by children and parents. Utterances are annotated for the type of sentence (declarative, interrogative, imperative).
-
-```{r ChildesDBimports}
-#Import all English utterances from CHILDES 
-eng_utterances <- get_utterances(collection = c("Eng-NA","Eng-UK"), 
-                                 role = c("target_child","Mother", "Father"))
-```
-
-
-```{r lowerCase}
-eng_utterances$utterance <- eng_utterances$gloss %>% tolower()
-
-eng_utterances$no <-
-  eng_utterances$utterance %>%
-  str_count(pattern = "(^|[^a-z])no([^a-z]|$)")
-
-eng_utterances$not <-
-  eng_utterances$utterance %>%
-  str_count(pattern = "(^|[^a-z])not([^a-z]|$)")
-
-eng_utterances$nt <-
-  eng_utterances$utterance %>%
-  str_count(pattern = "n't")
-```
-
-

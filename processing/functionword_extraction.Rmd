@@ -187,63 +187,53 @@ english_tokens$utterance_type <-
 This chunk of code separates contracted morphemes in the "gloss" column, then adds it as a separate row with the same information as the ones in the original row. The purpose of it is to count contractions separately as functional morphemes. It takes a long time to run though!
 
 ```{r}
+# Change cannot to can not (separate by a space)
+
+```
+
+```{r}
+# Change can't to cann't
+
+```
+
+
+```{r}
 # Define the patterns and exceptions
-patterns <- c("n't", "'ll", "'s", "'d", "'m")
-exceptions <- c("can't", "won't", "cannot")
+patterns <- c("n't", "'ll", "'s", "'d", "'m", "'re")
+#exceptions <- c("can't", "won't", "cannot")
 
-process_words <- function(df, patterns, exceptions) {
-  new_df <- data.frame()  # Initialize an empty data frame
-  
-  for (i in 1:nrow(df)) {
-    row_i <- df[i, ]
-    matched_pattern <- NA  # To store a found pattern, if any
-    
-    # Check if the gloss is an exception
-    if(row_i$gloss %in% exceptions) {
-      if(row_i$gloss == "can't") {
-        # Remove only "'t" from "can't" to leave "can"
-        row_i$gloss <- sub("'t$", "", row_i$gloss)
-        matched_pattern <- "n't"
-      } 
-      else if (row_i$gloss == "cannot"){
-        # remove not, leave can
-        row_i$gloss <- sub("not$", "", row_i$gloss)
-        matched_pattern <- "not"
-      }
-      else if (row_i$gloss == "won't") {
-        # For "won't", do nothing and leave it unchanged
-        matched_pattern <- NA
-      }
-    } else {
-      # Process normally: check if gloss ends with any of the specified patterns
-      for (p in patterns) {
-        if (grepl(paste0(p, "$"), row_i$gloss)) {
-          row_i$gloss <- sub(paste0(p, "$"), "", row_i$gloss)
-          matched_pattern <- p
-          break  # Stop after the first matching pattern
-        }
-      }
-    }
-    
-    # Append the (possibly modified) original row
-    new_df <- rbind(new_df, row_i)
-    
-    # If a pattern was found (or set in the exception), add a new row beneath with that pattern
-    if (!is.na(matched_pattern)) {
-      new_row <- df[i, ]
-      new_row$gloss <- matched_pattern
-      new_df <- rbind(new_df, new_row)
-    }
-  }
-  
-  rownames(new_df) <- NULL  # Reset row names
-  return(new_df)
-}
+# filter based on the patterns to have one dataframe of contracations and one without any contractions
 
-# test_english_tokens <- english_tokens %>% slice(5000:7000)
+# create two separate dataframes of the contractions
+contractions <-
+  english_tokens %>%
+  filter(str_detect(gloss, "n't|'ll|'s|'d|'m|'re"))
 
-contraction_tokens <- process_words(english_tokens, patterns, exceptions)
+contracted <- contractions
 
+# Remove contractions from the original list
+
+english_tokens <-
+  english_tokens %>%
+  filter(!str_detect(gloss, "n't|'ll|'s|'d|'m|'re"))
+
+# in one remove the contractions
+
+contracted$gloss <- str_remove_all(contracted$gloss, "n't|'ll|'s|'d|'m|'re")
+
+# in the other remove the contracted
+
+contractions$gloss <- str_extract(contractions$gloss, "n't|'ll|'s|'d|'m|'re")
+
+# put the dataframes back together
+
+contracted_contractions <-
+  rbind(codntracted, contractions)
+
+# bind them with the original that was without contractions
+
+english_tokens <-
+  rbind(english_tokens, contracted_contractions)
 ```
 
 Also make sure to separate "cannot" into "can" and "not". Make sure all types of negation contractions are stored as "nt". Make sure "won't" remains as one token because it is not really a contraction of will+not. 

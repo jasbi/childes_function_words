@@ -16,7 +16,10 @@ library(ggrepel)
 # Load Data
 
 ```{r processedEnglishTokens}
-english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+#english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+
+english_tokens_contract_processed <-
+read_feather("../processed_data/english_tokens_contract_processed.feather")
 ```
 
 There are content words below 6 months which seems quite impossible. It's important to inspect the data in the first year to make sure we don't have major errors. You may need to limit your analysis to 12-72 months only to avoid the issues here.
@@ -5801,22 +5804,113 @@ functionword_relfreq %>%
 am, is, are, do, does
 
 
-# phoneme length - Aaron Pilapil
-```{r library installations}
-library(dplyr)
-library(phonR)
-```
+# phoneme length
 ```{r}
-phoneme_lengths <- data.frame(
-  word = c("no", "not", "and", "or", "if", "all", "every", "some", "both", "many", "most", "none", "more","less", "the", "a", "this", "that", "these", "those", "what", "who", "when", "where", "why", "how", "one", "two", "three", "four", "five", "nine", "can", "could", "need", "maybe", "might", "must", "should", "again", "too", "also", "any", "yet", "only", "just"),
+function_words = c("no", "not", "nt", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+age_df <- data.frame(
+  gloss = function_words,
   
-  phoneme_length = c(3, 3, 3, 2, 2, 2, 4, 3, 4, 4, 5, 3, 3, 3, 2, 1, 3, 3, 3, 4, 4, 2, 3, 5, 4, 3, 3, 2, 3, 3, 4 , 4, 3, 3, 3, 5, 4, 4, 3, 4, 2, 5, 3, 3, 5, 4)
+  phoneme_length = c(2, 3, 1, 3, 3, 2, 2, 3, 6, 3, 3, 2, 4, 2, 4, 3, 4, 6, 3, 3, 7, 6, 7, 8, 5, 7, 6, 5, 6, 7, 3, 3, 3, 4, 4, 3, 3, 2, 3, 3, 3, 4, 5, 2, 3, 3, 4, 6, 3, 4, 4, 5, 6, 3, 4, 4, 4, 3, 3, 3, 2, 3, 3, 2, 4, 4, 6, 3, 3, 3, 4, 3, 6, 6, 6, 6, 5, 6, 3, 3, 2, 1, 2, 3, 3, 3, 3, 5, 8, 6, 4, 7, 4, 4, 4, 2, 3, 4, 5, 3, 5, 4, 6, 5, 2, 3, 3, 3, 3, 2, 2, 3, 2, 2, 2, 2, 3, 4, 4, 4, 4, 3, 6, 5, 5, 6, 5, 4, 3, 4, 6, 3, 3, 3, 3, 5, 3, 4, 2, 2, 2, 3, 2, 2, 3, 4, 3, 3, 3, 5, 2, 3, 3, 4, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3, 3, 4, 3, 3, 4, 6, 6, 7, 7, 6, 8, 8, 2, 6, 4, 2, 4, 5, 3, 4, 4, 4, 4, 4, 5, 3, 4, 4, 2, 3, 6, 6, 6, 3, 4, 6, 3, 7, 3, 3, 5, 4, 2, 4, 5, 2, 2, 3, 2, 6)
+  
 )
 
-age_of_production <- age_of_production %>%
-  left_join(phoneme_lengths, by = "word")
+length(function_words)
+# age_of_production <- age_of_production %>%
+#  left_join(phoneme_lengths, by = "word")
 
 ```
+
+# POS
+```{r}
+# make english_tokens_contract_processed just one instance of each function word
+
+function_words_df <-
+  english_tokens_contract_processed %>% 
+  filter(gloss %in% function_words),
+
+function_words_unique <-
+  function_words_df %>% 
+  distinct(gloss, .keep_all = TRUE),
+
+# get just the POS into its own df
+pos_df <- function_words_unique %>% select(gloss, part_of_speech),
+
+# merge them with the main df
+age_df <- 
+  age_df %>% 
+  left_join(pos_df, by = "gloss"),
+```
+
+# Parental relative frequency
+```{r}
+# get total amount of words said by parent
+# english_tokens_contract_processed
+
+total_words <- 
+  english_tokens_contract_processed %>%
+  filter(speaker == "parent") %>%
+  nrow(),
+
+# for each word, count rows where the parent is the speaker and the gloss is the word of interest
+
+counts <- function_words_df %>%
+  filter(speaker == "parent") %>%
+  count(gloss, name = "count"),
+
+# …then left-join onto all words, filling NAs with 0
+counts_df <- tibble(gloss = function_words) %>%
+  left_join(counts, by = "gloss") %>%
+  replace_na(list(count = 0)),
+
+# now divide all these counts by the total word count
+rel_freq <- counts_df %>%
+  mutate(count = count/total_words),
+
+# merge this with the age df
+age_df <- 
+  age_df %>% 
+  left_join(rel_freq, by = "gloss"),
+```
+
+# MLU
+```{r}
+# english_tokens_contract_processed
+
+# get a just the children's utterances
+child_tokens <-
+  english_tokens_contract_processed %>%
+  filter(speaker == "child"),
+
+# get length of each utterance
+utterance_lengths <- 
+  child_tokens %>%
+  group_by(utterance_id) %>%
+  summarise(utterance_length = n()),
+
+# join the utterance lengths back onto the table
+child_tokens_utter_lengths <-
+  child_tokens %>% 
+  left_join(utterance_lengths, by = "utterance_id") %>%
+  group_by(gloss) %>%
+  summarise(mean_utterance_length = mean(utterance_length))%>%
+  arrange(gloss),
+
+# filter this so that it's just the function words
+mean_length_utterance <-
+  child_tokens_utter_lengths %>%
+  filter(gloss %in% function_words) %>%
+  select(gloss, mean_utterance_length),
+
+# join this with the main dataframe
+age_df <- 
+  age_df %>% 
+  left_join(mean_length_utterance, by = "gloss"),
+
+# from aaron: age_df is the one you want to merge with! 
+
+```
+
 
 # Age of Production Plot
 

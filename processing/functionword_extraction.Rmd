@@ -207,7 +207,7 @@ english_tokens_contract <-
 ```{r}
 # change won't to wont so it doesn't get picked up by the pattern recognition below
 english_tokens_contract <-
-  english_tokens %>%
+  english_tokens_contract %>%
   mutate(gloss = str_replace(gloss, "won't", "wont"))
 
 ```
@@ -644,5 +644,5 @@ english_tokens_contract$syncategory[english_tokens$word_category=="content"] <- 
 
 ```{r save_dataframe}
 write_feather(english_tokens, "../processed_data/english_tokens_processed.feather")
-write_feather(english_tokens_contract, "../processed_data/english_tokens_processed.feather")
+write_feather(english_tokens_contract, "../processed_data/english_tokens_contract_processed.feather")
 ```

@@ -48,7 +48,8 @@ vignettes/*.pdf
 */.Rhistory
 
 
-/modeling/
+modeling/
 raw_data/english_tokens.feather
 processed_data/english_tokens_processed.feather
+processed_data/english_tokens_contract_processed.feather
 literature/

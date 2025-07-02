@@ -5,7 +5,7 @@ title: ""
 output: pdf_document
 ---
 
-\begin{center} \textbf{Estimating "Onset Age of Production" for English Function Words Using Child Language Corpora and Growth Curve Models} \end{center}
+\begin{center} \textbf{Estimating ``Onset Age of Production" for English Function Words Using Child Language Corpora and Bayesian Growth Curve Models} \end{center}
 
 <!-- This gets rid of page numbers -->
 \pagenumbering{gobble}
@@ -20,37 +20,25 @@ library(png)
 #library(wordcountaddin)
 ```
 
-**Overview** -- Previous research has shown that content words are acquired earlier than function words (Bates et al. 1994; Braginsky et al. 2016; Frank et al. 2017). Yet, the exact trajectory and order of function word acquisition has remained relatively understudied at large scale. This is partly because age of acquisition for lexical items is often measured using Child Development Inventory (CDI) questionnaires (Fenson et al. 2007) which represent content words more than function words. On the other hand, function words have very high frequency of production which makes them easily detectable and measurable in corpus data. In this study, we use the largest available child language corpora as well as growth curve modeling to estimate the "onset of production" for English function words. Our estimates match previous reports in the literature in several cases (e.g. negation) and suggest that for a large number of function words, children start their productions as early as 12-30 months. Overall, corpus data and growth curve modeling prove promising in detecting early emergence of functional meaning in child language.
+**Overview** -- Previous research has shown that content words are acquired earlier than function words (Bates et al. 1994; Braginsky et al. 2016; Frank et al. 2017), but the exact trajectory and order of function word acquisition has remained relatively understudied at large scale. In this study, we use the largest available child language corpora as well as Bayesian growth curve modeling to estimate the population level onset of production for more than 100 English function words. Our estimates suggest that for the large majority of function words, the earliest age of production lies between 12-24 months of age. The results of linear regression modeling show that longer function words as measured by the number of phonemes and function words that appear in longer utterances as measured by their Mean Length of Utterance (MLU) also have later estimated onset age of production. We did not find a significant effect of frequency in child directed-speech on our estimates of onset age of production for function words. Overall these results point to early emergence of abstract functional morphemes with production limitations as the main bottleneck.
 
 ```{r exclusions, include=FALSE}
-#negation_relfreq <- readRDS("../processed_data/category_table") 
-#negative_proportions <- readRDS("../processed_data/negation_proportions")
-exclusions <- read_csv("raw_data/token_exclusions.csv")
+exclusions <- read_csv("../raw_data/token_exclusions.csv")
 ```
 
-**Methods** -- We used word tokens in the English-North America and English-UK collections of [CHILDES](https://childes.talkbank.org/) corpora (MacWhinney 2000), accessed via the online database [childes-db.stanford.edu](childes-db.stanford.edu) and its associated R package \{childsr\} (Sanchez et al. 2019). After exclusions due to unintelligibility (N= `r format(exclusions$unintelligible, big.mark= ",", scientific=FALSE)` tokens) or missing information (N = `r format(exclusions$missing, big.mark= ",", scientific=FALSE)` tokens), as well as age range of less than 12 and more than 72 months (N= `r format(exclusions$age, big.mark= ",", scientific=FALSE)` tokens), the collection contained `r format(exclusions$after_age, big.mark= ",", scientific=FALSE)` tokens from `r format(exclusions$n_chi_age, big.mark= ",", scientific=FALSE)` children. We compiled and edited a list of about 150 English function words using the \{stopword\} package in R and the NLTK package in Python. We classified all tokens produced by parents and children in the corpora into content vs. function words. All tokens were annotated for the age of the child (in months) as well as whether the token was produced by parents or children. We computed the "cumulative relative frequency" of each function word by dividing its frequency up to that month by the frequency of all the words produced by children/parents up to that month.
+**Methods** -- We used word tokens in the English-NA and English-UK collections of [CHILDES](https://childes.talkbank.org/) corpora (MacWhinney 2000), accessed via the online database [childes-db.stanford.edu](childes-db.stanford.edu) and its associated R package \{childsr\} (Sanchez et al. 2019). Our collection contained `r format(exclusions$after_age, big.mark= ",", scientific=FALSE)` tokens from `r format(exclusions$n_chi_age, big.mark= ",", scientific=FALSE)` children. We compiled and edited a list of about 150 English function words. We classified all tokens produced by parents and children in the corpora into content vs. function words. All tokens were annotated for the age of the child (in months) as well as whether the token was produced by parents or children. We computed the "cumulative relative frequency" of each function word by dividing its frequency up to that month by the frequency of all the words produced by children/parents up to that month. For each function word, we also produced its relative frequency in child-directed speech (CDS), its length in phonemes, and its MLU.
 
-**Results** -- We first show that word cumulative relative frequencies have different developmental distributions for function vs. content words. For most function words, cumulative relative frequencies follow a nonlinear S curve across development with a period of accelerated growth, a period of slowdown, and a final stage of stable production. We fit separate Bayesian growth curve models (Figure 2, Right) to the cumulative relative frequency of each function word using the BRMS package (Bürkner 2017). We used growth curves with three parameters: 1. Lambda (lag): estimating the age at which production starts; 2. Miu: maximum rate of growth; and 3. A: maximum growth. Uniform priors were chosen for all three parameters. Figure 2 (Left) shows the onset of production estimates for a sample of 11 function words in our study. 
+**Results** -- Word cumulative relative frequencies have different developmental distributions for function vs. content words overall. For most function words, cumulative relative frequencies follow a nonlinear S curve across development with a period of accelerated growth, a period of slowdown, and a final stage of stable production. Figure 1 (bottom right) shows an example curve for the modal ``can". We fit separate Bayesian growth curve models to the cumulative relative frequency of each function word using the BRMS package (Bürkner 2017). We used growth curves with three parameters: 1. Lambda (lag): estimating the age at which production starts; 2. Miu: maximum rate of growth; and 3. A: maximum growth. Uniform priors were chosen for all three parameters. Figure 2 (Left) shows the onset of production estimates for a sample of 75 function words in our study. A linear regression showed a significant effect of function word length in phonemes ($\beta=2.65$, $t=3.182$, $p=0.002$) and MLU ($\beta=2.07$, $t=3.137$, $p=0.002$), but not relative frequency in CDS ($\beta=-40.09$, $t=-0.214$, $p=0.83$).
 
 \footnotesize
 \hfill Word Count: 497
 
-**References** -- Bates, Elizabeth, Virginia Marchman, Donna Thal, Larry Fenson, Philip Dale, J Steven Reznick, Judy Reilly, and Jeff Hartung. 1994. “Developmental and Stylistic Variation in the Composition of Early Vocabulary.” J Child Lang 21 (01): 85–123.--Bürkner, P.-C. (2017). Brms: An R package for Bayesian multilevel models using Stan. Journal of Statistical Software, 80(1). --Braginsky, M., Yurovsky, D., Marchman, V. A., \& Frank, M. (2016). From uh-oh to tomorrow: Predicting age of acquisition for early words across languages. In CogSci (Vol. 6). --Fenson, Larry, Elizabeth Bates, Philip S Dale, Virginia A Marchman, J Steven Reznick, and Donna J Thal. 2007. MacArthur-Bates Communicative Development Inventories. Brookes Publishing Company.-- Frank, M. C., Braginsky, M., Yurovsky, D., & Marchman, V. A. (2017). Wordbank: An open repository for developmental vocabulary data. Journal of child language, 44(3), 677-694.--MacWhinney, Brian (2000) The CHILDES Project: The Database -- Park, Tschang-Zin (1979) Some Facts on Negation: Wode's Four-Stage Developmental Theory of Negation Revisited. *JCL* -- Sanchez, Alessandro, Stephan Meylan, Mika Braginsky, Kyle MacDonald, Daniel Yurovsky, and Michael C Frank (2019) Childes-Db: A Flexible and Reproducible Interface to CHILDES. *Behavior Research Methods* 
+**References** -- Bates, Elizabeth, Virginia Marchman, Donna Thal, Larry Fenson, Philip Dale, J Steven Reznick, Judy Reilly, and Jeff Hartung. 1994. “Developmental and Stylistic Variation in the Composition of Early Vocabulary.” J Child Lang 21 (01): 85–123.--Bürkner, P.-C. (2017). Brms: An R package for Bayesian multilevel models using Stan. Journal of Statistical Software, 80(1). --Braginsky, M., Yurovsky, D., Marchman, V. A., \& Frank, M. (2016). From uh-oh to tomorrow: Predicting age of acquisition for early words across languages. In CogSci (Vol. 6). --Frank, M. C., Braginsky, M., Yurovsky, D., & Marchman, V. A. (2017). Wordbank: An open repository for developmental vocabulary data. Journal of child language, 44(3), 677-694.--MacWhinney, Brian (2000) The CHILDES Project: The Database -- Park, Tschang-Zin (1979) Some Facts on Negation: Wode's Four-Stage Developmental Theory of Negation Revisited. *JCL* -- Sanchez, Alessandro, Stephan Meylan, Mika Braginsky, Kyle MacDonald, Daniel Yurovsky, and Michael C Frank (2019) Childes-Db: A Flexible and Reproducible Interface to CHILDES. *Behavior Research Methods* 
 
-```{r curvesPlots, warning=FALSE,echo=FALSE, fig.env="figure", fig.height=2.5, fig.cap="Cumulative relative frequency (words per thousand) for the sample words `no' and `can' in children's productions."}
-negation_plot <- readRDS("neg_no_childdata.RDS")
+```{r ageOfProductinoPlot, warning=FALSE,echo=FALSE, fig.env="figure", fig.height=9, fig.cap="Estimated onset of production (lag value Lambda) for a sample of function words in the study."}
 modal_plot <- readRDS("can_childdata.RDS")
 
-plot1 <- ggplot(negation_plot, aes(x = age, y = cumulative_ppt)) +
-  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw() +
-  labs(x = "Age (Months)", y="Cumulative Relative Frequency", title="Function Word: No") + 
-  theme(legend.position = "none")
-
-# Second plot: modal_plot
-plot2 <- ggplot(modal_plot, aes(x = age, y = cumulative_ppt)) +
+plot1 <- ggplot(modal_plot, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
@@ -58,48 +46,23 @@ plot2 <- ggplot(modal_plot, aes(x = age, y = cumulative_ppt)) +
   theme_bw() + 
   theme(legend.position = "top", legend.direction = "horizontal")
 
-# Combine the plots
-grid.arrange(plot1, plot2, ncol = 2)
+age_of_production_plot <- readRDS("../processing/age_of_production.RDS")
 
-# ggplot(negation_plot, aes(x = age, y = cumulative_ppt)) +
-#   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-#   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-#   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-#   theme_bw() +
-#   labs(x = "Age (Months)", y="Cumulative Relative Frequency")
-# 
-# ggplot(modal_plot, aes(x = age, y = cumulative_ppt)) +
-#   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-#   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-#   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-#   theme_bw()
-```
-
-
-```{r ageOfProductinoPlot, warning=FALSE,echo=FALSE, fig.env="figure", fig.height=2.5, fig.cap="Estimated onset of production (lag value Lambda) for a sample of function words in the study."}
-age_of_production_plot <- readRDS("age_of_production.RDS")
-
-img_path <- "growthcurve.png"  # Replace with the actual path to your PNG image
+img_path <- "../pics/growthcurve.png"  # Replace with the actual path to your PNG image
 img <- readPNG(img_path)
 img_grob <- rasterGrob(img, interpolate = TRUE)
 
 # Create the ggplot
-plot1 <- age_of_production_plot %>%
+plot2 <- age_of_production_plot %>%
+  filter(Estimate<40) %>%
   ggplot(aes(x = Estimate, y = word)) +
   geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
   theme_bw() +
-  theme(axis.text.y = element_text(size = 14)) +
+  theme(axis.text.y = element_text(size = 11)) +
   labs(x = "Age (Months)", y = "")
 
 # Combine the ggplot and the image
-grid.arrange(plot1, img_grob, ncol = 2)
-
-#age_of_production_plot %>%
-#  ggplot(aes(x=Estimate, y=word)) +
-#  geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
-#  theme_bw() + 
-#  theme(axis.text.y = element_text(size = 14), xlab="age") + 
-#  labs(x = "Age (Months)", y="")
+grid.arrange(plot2, img_grob, plot1, layout_matrix = rbind(c(1, 2), c(1, 3)))
 ```
 
 

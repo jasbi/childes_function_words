@@ -18,4 +18,102 @@ individual_english_tokens <- get_tokens(corpus = c("Braunwald", "Brown", "Provid
                                  token = "*")
 ```
 
-#
+# Individual Children
+
+## Adam from Brown
+
+```{r negation_no}
+Adam_relfreq <-
+  english_tokens %>%
+  filter(corpus_name=="Brown", target_child_name=="Adam") %>%
+  group_by(word, age, speaker) %>%
+  summarise(freq=n()) %>%
+  group_by(speaker, age) %>%
+  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  group_by(word, speaker) %>%
+  arrange(age) %>%
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+```
+
+```{r}
+Adam_relfreq %>%
+  filter(word=="some") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+## Eve from Brown
+
+```{r negation_no}
+Sarah_relfreq <-
+  english_tokens %>%
+  filter(corpus_name=="Brown", target_child_name=="Sarah") %>%
+  group_by(word, age, speaker) %>%
+  summarise(freq=n()) %>%
+  group_by(speaker, age) %>%
+  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  group_by(word, speaker) %>%
+  arrange(age) %>%
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+```
+
+```{r}
+Sarah_relfreq %>%
+  filter(word=="this") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+
+## Naima from Providence
+
+```{r negation_no}
+Naima_relfreq <-
+  english_tokens %>%
+  filter(corpus_name=="Providence", target_child_name=="Naima") %>%
+  group_by(word, age, speaker) %>%
+  summarise(freq=n()) %>%
+  group_by(speaker, age) %>%
+  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  group_by(word, speaker) %>%
+  arrange(age) %>%
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+```
+
+```{r}
+Naima_relfreq %>%
+  filter(word=="if") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+## Alex from Providence
+
+```{r negation_no}
+Alex_relfreq <-
+  english_tokens %>%
+  filter(corpus_name=="Providence", target_child_name=="Alex") %>%
+  group_by(word, age, speaker) %>%
+  summarise(freq=n()) %>%
+  group_by(speaker, age) %>%
+  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  group_by(word, speaker) %>%
+  arrange(age) %>%
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+```
+
+```{r}
+Alex_relfreq %>%
+  filter(word=="and") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+

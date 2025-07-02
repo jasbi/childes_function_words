@@ -41,6 +41,8 @@ syncategory_relfreq <-
   arrange(age) %>%
   mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total))
 ```
+
+
 ## Individual Function Words
 
 Here we compute cumulative relative frequencies for individual function words by groupingby "word":
@@ -100,7 +102,7 @@ syncategory_relfreq %>%
 
 ```{r negation_no}
 functionword_relfreq %>%
-  filter(word=="no") %>%
+  filter(word=="no", age>12) %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
@@ -162,12 +164,11 @@ functionword_relfreq %>%
   theme_bw()
 ```
 
-
 ##### Not (Done)
 
 ```{r negation_not_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="not") %>%
+  filter(word=="not", age>12) %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
@@ -218,7 +219,7 @@ ggplot(neg_not_childdata, aes(x = age, y = cumulative_ppt)) +
 
 ```{r conjunction_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="and")%>%
+  filter(word=="and", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
@@ -266,7 +267,7 @@ ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
 
 ```{r conjunction, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="or")%>%
+  filter(word=="or", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
@@ -514,8 +515,6 @@ functionword_relfreq %>%
 ```
 
 ### Individual Quantifiers
-
-none, every, few, several, a few, , noone, nowhere, somewhere, everywhere
 
 #### All (Done)
 
@@ -3072,7 +3071,7 @@ Not enough "cannot" to be worth investigating
 
 ```{r can_comparison_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="can")%>%
+  filter(word=="can", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
@@ -5719,7 +5718,7 @@ functionword_relfreq %>%
 
 ```{r me_pronoun_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="me")%>%
+  filter(word=="me", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
@@ -5730,7 +5729,7 @@ functionword_relfreq %>%
 
 ```{r i_pronoun_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="he")%>%
+  filter(word=="i", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
@@ -5752,38 +5751,165 @@ functionword_relfreq %>%
 
 #### Your
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="your", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### Yours
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="yours", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
 
 #### We
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="we", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### Our
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="our", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
 #### Ours
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="ours", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
 #### She
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="she", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
 
 #### Her
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="her", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### Hers
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="hers", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
 
 #### He
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="he", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### His
+
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="his", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
 #### They
 
+```{r you_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="they", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### Their
 
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="their", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+
 #### Theirs
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="theirs", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
 #### It
 
 ```{r it_pronouns_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="it")%>%
+  filter(word=="it", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + 
+  theme_bw()
 ```
 
 
@@ -5791,18 +5917,92 @@ functionword_relfreq %>%
 
 ```{r its_pronoun_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="its")%>%
+  filter(word=="its", age>12)%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker)
+  facet_grid(.~speaker) + 
+  theme_bw()
 ```
 
 
 
 ### Auxiliaries
 
-am, is, are, do, does
+#### am
 
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="am", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+#### is
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="is", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### are
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="are", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### was
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="was", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### were
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="were", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### do
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="do", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+#### does
+
+```{r it_pronouns_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="does", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
 
 # phoneme length
 ```{r}
@@ -5927,10 +6127,12 @@ age_of_production_predictors <-
 # run regression
 m_full <- lm(Estimate ~ phoneme_length
                      + frequency
-                     + mean_utterance_length
-                     + part_of_speech,
+                     + mean_utterance_length,
              data = age_of_production_predictors)
 summary(m_full)
+
+ggplot(filter(age_of_production_predictors, Estimate<40), aes(x = Estimate, y=frequency)) +
+  geom_point() + geom_smooth(method = "lm", se = FALSE)
 
 ```
 
@@ -5951,6 +6153,7 @@ age_of_production <-
 age_of_production <- readRDS("age_of_production.RDS")
 
 age_of_production %>%
+  filter(Estimate<40) %>%
   ggplot(aes(x=Estimate, y=word)) +
   geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
   theme_bw() + 
@@ -6015,4 +6218,3 @@ CDI_onset_age %>%
   labs(x = "Age (Months)", y = "") +
   scale_x_continuous(breaks = seq(min(CDI_onset_age$age_above_0.15), max(CDI_onset_age$age_above_0.15), by = 1))
 ```
-

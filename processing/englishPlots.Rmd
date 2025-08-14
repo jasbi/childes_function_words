@@ -6138,7 +6138,7 @@ age_df <-
   age_df %>% 
   left_join(function_concreteness_scale, by = "gloss")
 ```
-
+# syn category
 ```{r}
 # collapse all the word types for each word in function_words_df
 function_words_df_collapsed <- function_words_df %>%
@@ -6146,6 +6146,10 @@ function_words_df_collapsed <- function_words_df %>%
   group_by(gloss) %>%
   summarise(word_category = paste(word_category, collapse = ", "), .groups = 'drop')
 
+# all words just have one type, join by gloss
+age_df <- 
+  age_df %>% 
+  left_join(function_words_df_collapsed, by = "gloss")
 ```
 
 # run plot on age_df

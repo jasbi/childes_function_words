@@ -16,7 +16,7 @@ library(ggrepel)
 # Load Data
 
 ```{r processedEnglishTokens}
-#english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
 
 english_tokens_contract_processed <-
 read_feather("../processed_data/english_tokens_contract_processed.feather")
@@ -6107,6 +6107,44 @@ age_df <-
   left_join(mean_length_utterance, by = "gloss")
 
 # from aaron: age_df is the one you want to merge with! 
+
+```
+
+# concreteness scores
+```{r}
+# read in the concreteness scores for each function word into a column
+library(readxl)
+concreteness_scale <- read_excel("../raw_data/concreteness_scale.xlsx")
+concreteness_scale <- concreteness_scale %>%
+   mutate(Word = tolower(Word))
+
+# filter it to just the function words
+function_concreteness_scale <-
+   concreteness_scale %>% 
+   filter(Word %in% function_words)
+
+# certain words don't have a score
+missing_words <- setdiff(function_words, function_concreteness_scale$Word)
+
+# make it just the words and the concreteness
+function_concreteness_scale <- function_concreteness_scale %>%
+  select(Word, Conc.M)
+
+function_concreteness_scale <- function_concreteness_scale %>%
+  rename(gloss = Word)
+
+# join to age_df
+age_df <- 
+  age_df %>% 
+  left_join(function_concreteness_scale, by = "gloss")
+```
+
+```{r}
+# collapse all the word types for each word in function_words_df
+function_words_df_collapsed <- function_words_df %>%
+  distinct(gloss, word_category) %>%
+  group_by(gloss) %>%
+  summarise(word_category = paste(word_category, collapse = ", "), .groups = 'drop')
 
 ```
 

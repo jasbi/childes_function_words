@@ -7,113 +7,416 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(childesr)
+library(tidyverse)
+library(feather)
+library(dplyr)
+library(ggplot2)
 ```
 
 # Individual Child Stats
 
 ```{r ChildesDBimports}
-#Getting data from 7 corpor with 25 children
+# Data from 7 corpora with 25 children
+# Note: Braunwald - Emily, Sekali - Ellie, Stephen (Missing)
 individual_english_tokens <- get_tokens(corpus = c("Braunwald", "Brown", "Providence", "MacWhinney", "Sachs", "ComptonPater","Sekali"), 
                                  role = c("target_child","Mother", "Father"), 
                                  token = "*")
 ```
 
-# Individual Children
 
-## Adam from Brown
+```{r lowerCase}
+individual_english_tokens$gloss <- individual_english_tokens$gloss %>% tolower()
+```
 
-```{r negation_no}
-Adam_relfreq <-
+# Token Processing
+
+## Exclusions
+```{r exclusionsTokens}
+# count the tokens before exclusions
+initial <- nrow(individual_english_tokens)
+
+# number of children before exclusions
+n_chi_initial <-
+  individual_english_tokens$target_child_id %>% unique() %>% length()
+
+# remove the unintelligible tokens
+english_tokens <- 
+  individual_english_tokens %>% 
+  filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
+
+# count the tokens after excluding unintelligible ones
+unintels <- nrow(english_tokens)
+
+# number of children after excluding unintelligible tokens
+n_chi_unintels <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+## babbling ##
+
+# remove babbles
+english_tokens <-
   english_tokens %>%
-  filter(corpus_name=="Brown", target_child_name=="Adam") %>%
-  group_by(word, age, speaker) %>%
-  summarise(freq=n()) %>%
-  group_by(speaker, age) %>%
-  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
-  group_by(word, speaker) %>%
-  arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+  filter(part_of_speech != "bab")
+
+# babbles that slipped by 
+babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+
+# remove all glosses that are just a letter, except for A, a, I, and i
+#alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
+# filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
+
+#filter out babbles
+english_tokens <- 
+  english_tokens %>%
+  filter(!gloss %in% babbles)
+
+# remove other unlikely words/transcription mistakes such as "vocalizing"
+#vector of ids
+unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
+#first three are "vocalizes" or "vocalizing", "classic", "vocalizes", " references", "transcribed"
+english_tokens <- 
+  english_tokens %>%
+  filter(!id %in% unreasonable_id)
+
+# count the tokens after excluding babbles and unreasonable words
+babble_unreasonable <- nrow(english_tokens)
+
+# number of children after excluding babbles/unreasonable tokens
+n_chi_babble_unreason <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+# remove NAs target_child_age
+english_tokens <- 
+  english_tokens %>% drop_na(target_child_age)
+
+# count the tokens after removing NA tokens
+nas <- nrow(english_tokens)
+
+# number of children after excluding NAs
+n_chi_nas <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+#Take out data for the age range above 6 years
+english_tokens <-
+  english_tokens %>%
+  filter(target_child_age < 72)
+
+# count the tokens after excluding the below 1 and older than 6 age range
+age_ex <- nrow(english_tokens)
+
+# number of children left after exclusions
+n_chi_age <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+# record the dataframe of exclusions
+exclusions <-
+  data.frame (
+    initial = initial,
+    after_unintels = unintels,
+    after_babbles = babble_unreasonable,
+    after_nas = nas,
+    after_age = age_ex,
+    unintelligible = initial - unintels,
+    babbles = unintels - babble_unreasonable,
+    missing = babble_unreasonable - nas,
+    age = nas - age_ex,
+    n_chi_total = n_chi_initial,
+    n_chi_unintels = n_chi_unintels,
+    n_chi_babble = n_chi_babble_unreason,
+    n_chi_nas = n_chi_nas,
+    n_chi_age = n_chi_age)
+```
+
+```{r savingData}
+# save the exclusion data in a file as well as the final data
+#write_csv(exclusions, "../raw_data/token_exclusions.csv")
+#write_feather(english_tokens, "../raw_data/english_tokens.feather")
+```
+
+## Coding Speaker Roles
+```{r}
+# Collapse mothers and fathers into parents
+english_tokens$speaker <- "parent"
+english_tokens$speaker[english_tokens$speaker_role=="Target_Child"] <- "child"
+```
+
+## Coding Age
+```{r age}
+english_tokens$age <- english_tokens$target_child_age %>% floor()
+```
+
+## Grouping Utterance Types
+```{r utterance_types}
+# Prepare the utterance_type categories for this study based on the utterance_types in childes-db
+## Categories: declarative, impertaive, interrogative, and other
+english_tokens$utterance_type <-
+  recode(english_tokens$utterance_type, 
+         question = "interrogative",
+         `broken for coding`="other",
+          `imperative_emphatic` = "imperative",
+         interruption = "other",
+         `interruption question` = "interrogative",
+         `missing CA terminator` = "other",
+         `no break TCU continuation` = "other",
+         `question exclamation` = "interrogative",
+         `quotation next line` = "other",
+         `quotation precedes` = "other",
+         `self interruption` = "other",
+         `self interruption question` = "interrogative",
+         `trail off` = "other",
+         `trail off question` = "interrogative"
+         )
+```
+
+## Contractions
+```{r}
+# Change cannot to can not separated across rows
+# change cannot to to cann'ot and add this pattern to code below
+english_tokens_contract <-
+  english_tokens %>%
+  mutate(gloss = str_replace(gloss, "cannot", "cann'ot"))
+
 ```
 
 ```{r}
-Adam_relfreq %>%
-  filter(word=="some") %>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) +
-  theme_bw()
-```
+# Change can't to cann't
+english_tokens_contract <- 
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "can't", "cann't"))
 
-## Eve from Brown
-
-```{r negation_no}
-Sarah_relfreq <-
-  english_tokens %>%
-  filter(corpus_name=="Brown", target_child_name=="Sarah") %>%
-  group_by(word, age, speaker) %>%
-  summarise(freq=n()) %>%
-  group_by(speaker, age) %>%
-  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
-  group_by(word, speaker) %>%
-  arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
 ```
 
 ```{r}
-Sarah_relfreq %>%
-  filter(word=="this") %>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) +
-  theme_bw()
+# change won't to wont so it doesn't get picked up by the pattern recognition below
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "won't", "wont"))
+
+```
+
+```{r}
+# Define the patterns and exceptions
+patterns <- c("n't", "'ll", "'s", "'d", "'m", "'re")
+#exceptions <- c("can't", "won't", "cannot")
+
+# filter based on the patterns to have one dataframe of contracations and one without any contractions
+
+# create two separate dataframes of the contractions
+contractions <-
+  english_tokens_contract %>%
+  filter(str_detect(gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve"))
+
+contracted <- contractions
+
+# Remove contractions from the original list
+
+english_tokens_contract <-
+  english_tokens_contract %>%
+  filter(!str_detect(gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve"))
+
+# in one remove the contractions
+
+contracted$gloss <- str_remove_all(contracted$gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve")
+
+# in the other remove the contracted
+
+contractions$gloss <- str_extract(contractions$gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve")
+
+# put the dataframes back together
+
+contracted_contractions <-
+  rbind(contracted, contractions)
+
+# bind them with the original that was without contractions
+
+english_tokens_contract <-
+  rbind(english_tokens_contract, contracted_contractions)
+
+# replace n'ot with not
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "n'ot", "not"))
+
+# replace wont with won't
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "wont", "won't"))
+
+# english_tokens_contract is what you want to run the functions on to analyze contractions seperate from their stems
+```
+
+# Defining Function Words in English
+```{r NLTK list}
+c('couldn', "couldn't",
+ "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shouldn', "shouldn't", "won't", 'wouldn', "wouldn't")
+```
+
+```{r FunctionWords}
+english_tokens_contract$word <- "nonfunction"
+
+function_words_contract <- c("no", "not", "n't", "'ll", "'s", "'d", "'m", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+for (x in function_words_contract){
+  english_tokens_contract$word[english_tokens_contract$gloss==x] <- x
+}
+
+
+# create separate function words that do include the function words as their own words
+english_tokens$word <- "nonfunction"
+
+function_words <- c("no", "not", "I’m", "you’re", "he’s", "she’s", "it’s", "we’re", "they’re","i’ve", "you’ve", "we’ve", "they’ve", "i’d", "you’d", "he’d", "she’d", "we’d", "they’d", "i’ll", "you’ll", "he’ll", "she’ll", "we’ll", "they’ll", "don’t", "doesn’t", "didn’t", "isn’t", "aren’t", "wasn’t", "weren’t", "haven’t", "hasn’t", "hadn’t","can’t", "couldn’t", "won’t", "wouldn’t", "shouldn’t", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+for (x in function_words){
+  english_tokens$word[english_tokens$gloss==x] <- x
+}
 ```
 
 
-## Naima from Providence
+# Individual Children (CHILDES TalkBank & PhonBank)
 
+```{r}
+# Target Age Data Range: 12-36 months
+individual_children <- get_participants(
+  collection = "Eng-NA",
+  role = c("target_child"))
+
+individual_children |> 
+  select(name, corpus_name, min_age, max_age) |>
+  filter(!is.na(name),
+         min_age <= 18,
+         !corpus_name %in% c("NewmanRatner", "Braunwald", "Brown",
+                             "McCune", "Brent", "Davis-CDI",
+                             "StanfordEnglish", "Peters", "Rollins",
+                             "Feldman", "Tardif", "Soderstrom",
+                             "Bernstein", "Menn"))
+
+# NewmanRatner : Child not as involved in conversation
+# Braunwald : Found to have developmental disorder
+# Brown : Late development
+# McCune : most child language utterances not transcribed
+# Brent: some data not transcribed; most data cuts off around 12-14 months of age
+# Davis-CDI : children are just reciting words
+# StanfordEnglish : data not transcribed
+# Peters : data labelled weirdly
+# Rollins : only the mother speaks
+# Felman : child role not labelled or annotated in most conversations
+# Tardiff: age range only 17-20 months
+# Soderstrom : age range only 5-13 months
+# Bernstein : dataset is ver
+# Davis: Cameron, Charlotte, Georgia
+# !Davis: Ben
+```
+
+
+```{r}
+# Best Corpora (so far)
+individual_children <- get_participants(
+  corpus = c("Providence", "MacWhinney", "Sachs", "ComptonPater"), 
+  role = c("target_child"))
+
+individual_children |> 
+  select(name, corpus_name, min_age, max_age, collection_name) |>
+  filter(!is.na(name), collection_name == "Eng-NA")
+```
+
+
+## Providence: Naima
 ```{r negation_no}
 Naima_relfreq <-
   english_tokens %>%
-  filter(corpus_name=="Providence", target_child_name=="Naima") %>%
+  filter(corpus_name == "Providence", target_child_name == "Naima") %>%
   group_by(word, age, speaker) %>%
-  summarise(freq=n()) %>%
+  summarise(freq = n()) %>%
   group_by(speaker, age) %>%
-  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  mutate(total = sum(freq),
+         relfreq = freq / sum(freq),
+         ppt = relfreq * 1000) %>%
   group_by(word, speaker) %>%
   arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq) / cumsum(total), cumulative_ppt = cumulative_relfreq * 1000)
 ```
+
 
 ```{r}
-Naima_relfreq %>%
-  filter(word=="if") %>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) +
-  theme_bw()
+# Original Plot Code
+# Naima_relfreq %>%
+#   filter(word == "if") %>%
+#   ggplot(aes(age, cumulative_ppt)) +
+#   geom_point() +
+#   facet_grid(.~speaker) +
+#   theme_bw()
+
+plots_list <- lapply(function_words, function(fw) {
+  Naima_word_df <- Naima_relfreq %>%
+    filter(word == fw)
+  if (nrow(Naima_word_df) == 0) {
+    return(NULL)
+  }
+  ggplot(Naima_word_df, aes(age, cumulative_ppt)) +
+    geom_point() +
+    facet_grid(.~speaker) +
+    theme_bw() +
+    ggtitle(paste("Function Word:", fw))
+})
+
+for (p in plots_list) {
+  if (!is.null(p)) print(p)
+}
 ```
 
-## Alex from Providence
-
+## Providence: Ethan
 ```{r negation_no}
-Alex_relfreq <-
+Ethan_relfreq <-
   english_tokens %>%
-  filter(corpus_name=="Providence", target_child_name=="Alex") %>%
+  filter(corpus_name == "Providence", target_child_name == "Ethan") %>%
   group_by(word, age, speaker) %>%
-  summarise(freq=n()) %>%
+  summarise(freq = n()) %>%
   group_by(speaker, age) %>%
-  mutate(total=sum(freq), relfreq=freq/sum(freq), ppt=relfreq*1000) %>%
+  mutate(total = sum(freq),
+         relfreq = freq / sum(freq),
+         ppt = relfreq * 1000) %>%
   group_by(word, speaker) %>%
   arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_ppt=cumulative_relfreq*1000)
+  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq) / cumsum(total), cumulative_ppt = cumulative_relfreq * 1000)
 ```
 
 ```{r}
-Alex_relfreq %>%
-  filter(word=="and") %>%
-  ggplot(aes(age, cumulative_ppt)) +
-  geom_point() +
-  facet_grid(.~speaker) +
-  theme_bw()
+plots_list <- lapply(function_words, function(fw) {
+  Ethan_word_df <- Ethan_relfreq %>%
+    filter(word == fw)
+  if (nrow(Ethan_word_df) == 0) {
+    return(NULL)
+  }
+  ggplot(Ethan_word_df, aes(age, cumulative_ppt)) +
+    geom_point() +
+    facet_grid(.~speaker) +
+    theme_bw() +
+    ggtitle(paste("Function Word:", fw))
+})
+
+for (p in plots_list) {
+  if (!is.null(p)) print(p)
+}
 ```
+
+## Providence: Lily
+
+## Providence: Violet
+
+## Providence: William
+
+## MacWhinney: Ross
+
+## MacWhinney: Mark
+
+## Sachs: Naomi
+
+## ComptonPater: Julia
+
+## ComptonPater: Sean
+
+## ComptonPater: Trevor
+
+
 

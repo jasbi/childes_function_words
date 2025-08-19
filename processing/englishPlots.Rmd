@@ -6142,14 +6142,9 @@ age_df <-
 ```{r}
 # collapse all the word types for each word in function_words_df
 function_words_df_collapsed <- function_words_df %>%
-  distinct(gloss, word_category) %>%
+  distinct(gloss, part_of_speech) %>%
   group_by(gloss) %>%
-  summarise(word_category = paste(word_category, collapse = ", "), .groups = 'drop')
-
-# all words just have one type, join by gloss
-age_df <- 
-  age_df %>% 
-  left_join(function_words_df_collapsed, by = "gloss")
+  summarise(part_of_speech = paste(part_of_speech, collapse = ", "), .groups = 'drop')
 ```
 
 # run plot on age_df

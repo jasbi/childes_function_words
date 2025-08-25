@@ -17,11 +17,12 @@ library(ggplot2)
 # Individual Child Stats
 
 ```{r ChildesDBimports}
-# Data from 7 corpora with 25 children
+# Data from 4
 # Note: Braunwald - Emily, Sekali - Ellie, Stephen (Missing)
-individual_english_tokens <- get_tokens(corpus = c("Braunwald", "Brown", "Providence", "MacWhinney", "Sachs", "ComptonPater","Sekali"), 
-                                 role = c("target_child","Mother", "Father"), 
-                                 token = "*")
+individual_english_tokens <- get_tokens(
+  corpus = c("Providence", "MacWhinney", "Sachs", "ComptonPater"),
+  role = c("target_child","Mother", "Father"),
+  token = "*")
 ```
 
 
@@ -275,6 +276,7 @@ for (x in function_words){
 
 # Individual Children (CHILDES TalkBank & PhonBank)
 
+## Determining which corpora and children have enough data
 ```{r}
 # Target Age Data Range: 12-36 months
 individual_children <- get_participants(
@@ -308,9 +310,9 @@ individual_children |>
 # !Davis: Ben
 ```
 
-
+## Best Corpora (so far)
 ```{r}
-# Best Corpora (so far)
+
 individual_children <- get_participants(
   corpus = c("Providence", "MacWhinney", "Sachs", "ComptonPater"), 
   role = c("target_child"))
@@ -320,103 +322,42 @@ individual_children |>
   filter(!is.na(name), collection_name == "Eng-NA")
 ```
 
-
-## Providence: Naima
-```{r negation_no}
-Naima_relfreq <-
-  english_tokens %>%
-  filter(corpus_name == "Providence", target_child_name == "Naima") %>%
-  group_by(word, age, speaker) %>%
-  summarise(freq = n()) %>%
-  group_by(speaker, age) %>%
+## Plots of cumulative_ppt trajectories for each function word, faceted by child
+```{r}
+Child_relfreq <- english_tokens %>%
+  group_by(word, age, speaker, target_child_name, corpus_name) %>%
+  summarise(freq = n(), .groups = "drop") %>%
+  group_by(speaker, age, target_child_name) %>%
   mutate(total = sum(freq),
          relfreq = freq / sum(freq),
          ppt = relfreq * 1000) %>%
-  group_by(word, speaker) %>%
+  group_by(word, speaker, target_child_name) %>%
   arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq) / cumsum(total), cumulative_ppt = cumulative_relfreq * 1000)
-```
-
-
-```{r}
-# Original Plot Code
-# Naima_relfreq %>%
-#   filter(word == "if") %>%
-#   ggplot(aes(age, cumulative_ppt)) +
-#   geom_point() +
-#   facet_grid(.~speaker) +
-#   theme_bw()
+  mutate(cum_freq = cumsum(freq), 
+         cum_total = cumsum(total), 
+         cumulative_relfreq = cumsum(freq) / cumsum(total), 
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
+  ungroup()
 
 plots_list <- lapply(function_words, function(fw) {
-  Naima_word_df <- Naima_relfreq %>%
+  word_df <- Child_relfreq %>%
     filter(word == fw)
-  if (nrow(Naima_word_df) == 0) {
+  if (nrow(word_df) == 0) {
     return(NULL)
   }
-  ggplot(Naima_word_df, aes(age, cumulative_ppt)) +
+  ggplot(word_df, aes(age, cumulative_ppt, color = speaker)) +
     geom_point() +
-    facet_grid(.~speaker) +
+    geom_line() +
+    facet_wrap(~ target_child_name) +
     theme_bw() +
-    ggtitle(paste("Function Word:", fw))
+    labs(title = paste("Cumulative ppt for function word:", fw),
+         x = "Age (months)",
+         y = "Cumulative ppt",
+         color = "Speaker")
 })
 
 for (p in plots_list) {
   if (!is.null(p)) print(p)
 }
 ```
-
-## Providence: Ethan
-```{r negation_no}
-Ethan_relfreq <-
-  english_tokens %>%
-  filter(corpus_name == "Providence", target_child_name == "Ethan") %>%
-  group_by(word, age, speaker) %>%
-  summarise(freq = n()) %>%
-  group_by(speaker, age) %>%
-  mutate(total = sum(freq),
-         relfreq = freq / sum(freq),
-         ppt = relfreq * 1000) %>%
-  group_by(word, speaker) %>%
-  arrange(age) %>%
-  mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq) / cumsum(total), cumulative_ppt = cumulative_relfreq * 1000)
-```
-
-```{r}
-plots_list <- lapply(function_words, function(fw) {
-  Ethan_word_df <- Ethan_relfreq %>%
-    filter(word == fw)
-  if (nrow(Ethan_word_df) == 0) {
-    return(NULL)
-  }
-  ggplot(Ethan_word_df, aes(age, cumulative_ppt)) +
-    geom_point() +
-    facet_grid(.~speaker) +
-    theme_bw() +
-    ggtitle(paste("Function Word:", fw))
-})
-
-for (p in plots_list) {
-  if (!is.null(p)) print(p)
-}
-```
-
-## Providence: Lily
-
-## Providence: Violet
-
-## Providence: William
-
-## MacWhinney: Ross
-
-## MacWhinney: Mark
-
-## Sachs: Naomi
-
-## ComptonPater: Julia
-
-## ComptonPater: Sean
-
-## ComptonPater: Trevor
-
-
 

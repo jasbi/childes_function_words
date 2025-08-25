@@ -1,0 +1,646 @@
+---
+title: "Extracting Function Words of Interest from Childes"
+author: "Masoud Jasbi"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(childesr)
+library(tidyverse)
+library(feather)
+```
+
+# Loading Data from Childes-DB
+
+We use the package `r childesr` to access the data in the CHILDES database. The code below downloads and stores all utterances by children and parents:
+
+```{r ChildesDBimports}
+#Getting data from 1270 children in 73 corpora...
+all_french_tokens <- get_tokens(collection = c("French"), 
+                          role = c("target_child","Mother", "Father"),
+                          token = "*")
+```
+
+we should make sure all words are in lower case:
+
+```{r lowerCase}
+all_english_tokens$gloss <- all_english_tokens$gloss %>% tolower()
+```
+
+# Token Processing
+
+## Exclusions
+
+The following script cleans up the data to exclude: unintelligible tokens and tokens above 72 months of the child's age. All exclusions are stored in a file called exclusions.csv
+
+```{r exclusionsTokens}
+# count the tokens before exclusions
+initial <- nrow(all_english_tokens)
+
+# number of children before exclusions
+n_chi_initial <-
+  all_english_tokens$target_child_id %>% unique() %>% length()
+
+# remove the unintelligible tokens
+english_tokens <- 
+  all_english_tokens %>% 
+  filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
+
+# count the tokens after excluding unintelligible ones
+unintels <- nrow(english_tokens)
+
+# number of children after excluding unintelligible tokens
+n_chi_unintels <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+## babbling ##
+
+# remove babbles
+english_tokens <-
+  english_tokens %>%
+  filter(part_of_speech != "bab")
+
+# babbles that slipped by 
+babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+
+# remove all glosses that are just a letter, except for A, a, I, and i
+#alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
+# filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
+
+#filter out babbles
+english_tokens <- 
+  english_tokens %>%
+  filter(!gloss %in% babbles)
+
+# remove other unlikely words/transcription mistakes such as "vocalizing"
+#vector of ids
+unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
+#first three are "vocalizes" or "vocalizing", "classic", "vocalizes", " references", "transcribed"
+english_tokens <- 
+  english_tokens %>%
+  filter(!id %in% unreasonable_id)
+
+# count the tokens after excluding babbles and unreasonable words
+babble_unreasonable <- nrow(english_tokens)
+
+# number of children after excluding babbles/unreasonable tokens
+n_chi_babble_unreason <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+# remove NAs target_child_age
+english_tokens <- 
+  english_tokens %>% drop_na(target_child_age)
+
+# count the tokens after removing NA tokens
+nas <- nrow(english_tokens)
+
+# number of children after excluding NAs
+n_chi_nas <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+#Take out data for the age range above 6 years
+english_tokens <-
+  english_tokens %>%
+  filter(target_child_age < 72)
+
+# count the tokens after excluding the below 1 and older than 6 age range
+age_ex <- nrow(english_tokens)
+
+# number of children left after exclusions
+n_chi_age <-
+  english_tokens$target_child_id %>% unique() %>% length()
+
+# record the dataframe of exclusions
+exclusions <-
+  data.frame (
+    initial = initial,
+    after_unintels = unintels,
+    after_babbles = babble_unreasonable,
+    after_nas = nas,
+    after_age = age_ex,
+    unintelligible = initial - unintels,
+    babbles = unintels - babble_unreasonable,
+    missing = babble_unreasonable - nas,
+    age = nas - age_ex,
+    n_chi_total = n_chi_initial,
+    n_chi_unintels = n_chi_unintels,
+    n_chi_babble = n_chi_babble_unreason,
+    n_chi_nas = n_chi_nas,
+    n_chi_age = n_chi_age)
+```
+
+```{r savingData}
+# save the exclusion data in a file as well as the final data
+#write_csv(exclusions, "../raw_data/token_exclusions.csv")
+write_feather(english_tokens, "../raw_data/english_tokens.feather")
+```
+
+## Coding Speaker Roles
+
+Here we group mothers and fathers together as "parents".
+
+```{r}
+# Collapse mothers and fathers into parents
+english_tokens$speaker <- "parent"
+english_tokens$speaker[english_tokens$speaker_role=="Target_Child"] <- "child"
+```
+
+## Coding Age
+
+Here we bin the age data per month.
+
+```{r age}
+english_tokens$age <- english_tokens$target_child_age %>% floor()
+```
+
+## Grouping Utterance Types
+
+Grouping utterances as declarative, imperative, interrogative, and other.
+
+```{r utterance_types}
+# Prepare the utterance_type categories for this study based on the utterance_types in childes-db
+## Categories: declarative, impertaive, interrogative, and other
+english_tokens$utterance_type <-
+  recode(english_tokens$utterance_type, 
+         question = "interrogative",
+         `broken for coding`="other",
+          `imperative_emphatic` = "imperative",
+         interruption = "other",
+         `interruption question` = "interrogative",
+         `missing CA terminator` = "other",
+         `no break TCU continuation` = "other",
+         `question exclamation` = "interrogative",
+         `quotation next line` = "other",
+         `quotation precedes` = "other",
+         `self interruption` = "other",
+         `self interruption question` = "interrogative",
+         `trail off` = "other",
+         `trail off question` = "interrogative"
+         )
+```
+
+## Contractions
+
+This chunk of code separates contracted morphemes in the "gloss" column, then adds it as a separate row with the same information as the ones in the original row. The purpose of it is to count contractions separately as functional morphemes.
+
+```{r}
+# Change cannot to can not separated across rows
+# change cannot to to cann'ot and add this pattern to code below
+english_tokens_contract <-
+  english_tokens %>%
+  mutate(gloss = str_replace(gloss, "cannot", "cann'ot"))
+
+```
+
+```{r}
+# Change can't to cann't
+english_tokens_contract <- 
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "can't", "cann't"))
+
+```
+
+```{r}
+# change won't to wont so it doesn't get picked up by the pattern recognition below
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "won't", "wont"))
+
+```
+
+```{r}
+# Define the patterns and exceptions
+patterns <- c("n't", "'ll", "'s", "'d", "'m", "'re")
+#exceptions <- c("can't", "won't", "cannot")
+
+# filter based on the patterns to have one dataframe of contracations and one without any contractions
+
+# create two separate dataframes of the contractions
+contractions <-
+  english_tokens_contract %>%
+  filter(str_detect(gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve"))
+
+contracted <- contractions
+
+# Remove contractions from the original list
+
+english_tokens_contract <-
+  english_tokens_contract %>%
+  filter(!str_detect(gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve"))
+
+# in one remove the contractions
+
+contracted$gloss <- str_remove_all(contracted$gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve")
+
+# in the other remove the contracted
+
+contractions$gloss <- str_extract(contractions$gloss, "n't|'ll|'s|'d|'m|'re|n'ot|'ve")
+
+# put the dataframes back together
+
+contracted_contractions <-
+  rbind(contracted, contractions)
+
+# bind them with the original that was without contractions
+
+english_tokens_contract <-
+  rbind(english_tokens_contract, contracted_contractions)
+
+# replace n'ot with not
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "n'ot", "not"))
+
+# replace wont with won't
+english_tokens_contract <-
+  english_tokens_contract %>%
+  mutate(gloss = str_replace(gloss, "wont", "won't"))
+
+# english_tokens_contract is what you want to run the functions on to analyze contractions seperate from their stems
+```
+
+Also make sure to separate "cannot" into "can" and "not". Make sure all types of negation contractions are stored as "nt". Make sure "won't" remains as one token because it is not really a contraction of will+not. 
+
+# Defining Function Words in English
+
+How do we define what function words are?
+
+Here is a list of our function words:
+* Logical Connectives: no, not, n't (contracted not), and, or, if, nor, therefore
+* Quantifiers: none, some, each, every, all, most, few, many, several, a few, both, everyone, someone, somebody, everybody, noone, everything, something, nowhere, somewhere, everywhere
+* Comparative Quantity: more, less, much
+* Numerals: 
+  1. numbers: one, two, three, four, five, six, seven, eight, nine, ten
+  2. ordinals: first, second, third, fourth, fifth, last
+* Modals: can, could, need, may, might, should, ought, must, maybe, perhaps, shall, will, would
+* Negative Polarity Items: any, anyone, anything, anyhow, anywhere, anything, anyway, ever, yet
+* Definiteness and Demonstratives:  
+  1. Definites: the, a, an
+  2. Demonstratives: this, that, these, those
+* Temporals: 
+  1. Quantifiers: always, usually, seldom, never, sometimes, now, often, once 
+  2. Connectives: when, while, after, before, then, until, since, whenever, during
+* Interrogatives: who, when, what, whose, where, how, why, whom
+* Locatives: on, in, out, up, down, under, above, below, along, over, behind, across, beside, between, beyond, inside, outside, into, near, onto, toward
+* Causal Connectives: because
+* Contrast Connectives: but, although
+* Additives: again, too, also, another, other, others, still
+* Exclusives: only, just
+* Emphasis: even, indeed
+* Auxiliaries: am, is, are, do, does
+* Pronouns: I, you, ..
+* Other: either, neither, whether as, else, almost, already, except, for, from, instead, such, with, without, about, by, very, to
+
+Then we create a word column that marks all words as "other". Then we mark the function words of interest.
+
+```{r NLTK list}
+c('couldn', "couldn't",
+ "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shouldn', "shouldn't", "won't", 'wouldn', "wouldn't")
+```
+
+```{r FunctionWords}
+english_tokens_contract$word <- "nonfunction"
+
+function_words_contract <- c("no", "not", "n't", "'ll", "'s", "'d", "'m", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+for (x in function_words_contract){
+  english_tokens_contract$word[english_tokens_contract$gloss==x] <- x
+}
+
+
+# create separate function words that do include the function words as their own words
+english_tokens$word <- "nonfunction"
+
+function_words <- c("no", "not", "I’m", "you’re", "he’s", "she’s", "it’s", "we’re", "they’re","i’ve", "you’ve", "we’ve", "they’ve", "i’d", "you’d", "he’d", "she’d", "we’d", "they’d", "i’ll", "you’ll", "he’ll", "she’ll", "we’ll", "they’ll", "don’t", "doesn’t", "didn’t", "isn’t", "aren’t", "wasn’t", "weren’t", "haven’t", "hasn’t", "hadn’t","can’t", "couldn’t", "won’t", "wouldn’t", "shouldn’t", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+for (x in function_words){
+  english_tokens$word[english_tokens$gloss==x] <- x
+}
+```
+
+First we start with marking nonfunction words and selecting logical connectives:
+
+```{r logicalConnectives}
+english_tokens$word_category <- "nonfunction"
+
+logical_connectives <- c("no", "not", "and", "or", "if", "nor", "therefore") 
+
+for (x in logical_connectives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Logicals"
+}
+
+
+english_tokens_contract$word_category <- "nonfunction"
+
+logical_connectives <- c("no", "not", "n't", "and", "or", "if", "nor", "therefore") 
+
+for (x in logical_connectives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Logicals"
+}
+```
+
+Labeling Quantifiers:
+
+```{r quantifiers}
+quantifiers <- c("none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere") 
+
+for (x in quantifiers){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Quantifiers"
+}
+
+for (x in quantifiers){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Quantifiers"
+}
+
+```
+
+Comparative, superlative, and quantity words:
+
+```{r quantity}
+quantity <- c("more", "less", "much", "most", "least", "than") 
+
+for (x in quantity){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Quantity"
+}
+
+for (x in quantity){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Quantity"
+}
+```
+
+Cardinal Numbers:
+
+```{r cardinals}
+cardinals <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten") 
+
+for (x in cardinals){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Cardinals"
+}
+
+for (x in cardinals){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Cardinals"
+}
+
+```
+
+Ordinal Numbers: 
+
+```{r ordinals}
+ordinals <- c("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last") 
+
+for (x in ordinals){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Ordinals"
+}
+
+for (x in ordinals){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Ordinals"
+}
+```
+
+Modals:
+
+```{r modals}
+modals <- c("can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't") 
+
+for (x in modals){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Modals"
+}
+
+for (x in modals){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Modals"
+}
+
+
+```
+
+Negative Polarity Items:
+
+```{r NPIs}
+NPI <- c("any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet") 
+
+for (x in NPI){
+  english_tokens$word_category[english_tokens$gloss==x] <- "NPI"
+}
+
+for (x in NPI){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "NPI"
+}
+```
+
+Definites:
+
+```{r definiteness}
+definites <- c("the", "a", "an") 
+
+for (x in definites){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Definites"
+}
+
+for (x in definites){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Definites"
+}
+```
+
+Demonstratives:
+
+```{r demonstratives}
+# "that" is ambiguous between the complementizer and the determiner
+demonstratives <- c("this", "that", "these", "those") 
+
+for (x in demonstratives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Demonstratives"
+}
+
+for (x in demonstratives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Demonstratives"
+}
+```
+
+Temporal Quantifiers and Adverbs:
+
+```{r temporalAdverbs}
+temporal_quantifiers <- c("always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now") 
+
+for (x in temporal_quantifiers){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Temporal Quantifiers"
+}
+
+for (x in temporal_quantifiers){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Temporal Quantifiers"
+}
+```
+
+Temporal Connectives and Prepositions:
+
+```{r temporalConnectives}
+temporal_connectives <- c("while", "after", "before", "then", "until", "since", "whenever", "during") 
+
+for (x in temporal_connectives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Temporal Connectives"
+}
+
+for (x in temporal_connectives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Temporal Connectives"
+}
+```
+
+Wh words:
+
+```{r WHwords}
+Wh <- c("who", "when", "what", "whose", "where", "how", "why", "whom") 
+
+for (x in Wh){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Wh"
+}
+
+for (x in Wh){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Wh"
+}
+```
+
+Locatives:
+
+```{r Locatives}
+locatives <- c("on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there") 
+
+for (x in locatives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Locatives"
+}
+
+for (x in locatives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Locatives"
+}
+```
+
+Causal Connectives:
+
+```{r causals}
+causatives <- c("because") 
+
+for (x in causatives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Causal Connectives"
+}
+
+for (x in causatives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Causal Connectives"
+}
+```
+
+Contrast Connectives:
+
+```{r contrastivs}
+contrasts <- c("but", "although") 
+
+for (x in contrasts){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Contrast Connectives"
+}
+
+for (x in contrasts){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Contrast Connectives"
+}
+
+```
+
+Auxiliaries:
+
+Not all of these verbs are only auxiliary verbs.
+
+```{r auxiliaries}
+auxiliaries <- c("am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing") 
+
+for (x in contrasts){
+  english_tokens$word_category[english_tokens$gloss==x] <- "auxiliaries"
+}
+
+for (x in contrasts){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "auxiliaries"
+}
+```
+
+Pronouns:
+
+```{r pronouns}
+pronouns <- c("i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself") 
+
+for (x in pronouns){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Pronouns"
+}
+
+for (x in pronouns){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Pronouns"
+}
+```
+
+Additives:
+
+```{r additives}
+additives <- c("again", "too", "also", "another", "other", "others", "still") 
+
+for (x in temporal_connectives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Additives"
+}
+
+for (x in temporal_connectives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Additives"
+}
+```
+
+Exclusives:
+
+```{r exclusives}
+exclusives <- c("only","just") 
+
+for (x in exclusives){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Exclusives"
+}
+
+for (x in exclusives){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Exclusives"
+}
+```
+
+Focus Particles:
+
+```{r focus}
+focus <- c("even", "indeed") 
+
+for (x in focus){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Focus Particles"
+}
+
+for (x in focus){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Focus Particles"
+}
+```
+
+Other:
+
+```{r}
+other <- c("either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against") 
+
+for (x in other){
+  english_tokens$word_category[english_tokens$gloss==x] <- "Other"
+}
+
+for (x in other){
+  english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "Other"
+}
+```
+
+```{r}
+english_tokens$syncategory <- "Function"
+english_tokens$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
+
+english_tokens_contract$syncategory <- "Function"
+english_tokens_contract$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
+```
+
+## Saving Summary Tables
+
+```{r save_dataframe}
+write_feather(english_tokens, "../processed_data/english_tokens_processed.feather")
+write_feather(english_tokens_contract, "../processed_data/english_tokens_contract_processed.feather")
+```
+

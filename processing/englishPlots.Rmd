@@ -32,7 +32,7 @@ Here we compute cumulative relative frequencies of function vs. content words by
 
 ```{r}
 syncategory_relfreq <-
-  english_tokens_processed %>%
+  english_tokens_contract_processed %>%
   group_by(syncategory, age, speaker) %>%
   summarise(freq=n()) %>%
   group_by(speaker, age) %>%
@@ -49,7 +49,7 @@ Here we compute cumulative relative frequencies for individual function words by
 
 ```{r}
 functionword_relfreq <-
-  english_tokens_processed %>%
+  english_tokens_contract_processed %>%
   group_by(word, age, speaker) %>%
   summarise(freq=n()) %>%
   group_by(speaker, age) %>%
@@ -64,7 +64,7 @@ Here we compute cumulative relative frequencies by semantic categories we have c
 
 ```{r}
 wordcategory_relfreq <-
-  english_tokens_processed %>%
+  english_tokens_contract_processed %>%
   group_by(word_category, age, speaker) %>%
   summarise(freq=n()) %>%
   group_by(speaker, age) %>%
@@ -76,7 +76,7 @@ wordcategory_relfreq <-
 
 ## Function Word Syntactic Categories
 
-W ehave not yet looked at the emergence of different syntactic categories
+We have not yet looked at the emergence of different syntactic categories
 
 # Plots and Growth Curves
 
@@ -1296,7 +1296,8 @@ functionword_relfreq %>%
   filter(word=="before")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker) + theme_bw()
+  facet_grid(.~speaker) + theme_bw() +
+  labs(title = "Before")
 ```
 
 ```{r before_growth_model, include=FALSE}
@@ -1333,7 +1334,8 @@ ggplot(before_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Before")
 ```
 
 
@@ -1344,7 +1346,8 @@ functionword_relfreq %>%
   filter(word=="after")%>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
-  facet_grid(.~speaker) + theme_bw()
+  facet_grid(.~speaker) + theme_bw() +
+  labs(title = "After")
 ```
 
 ```{r after_growth_model, include=FALSE}
@@ -1381,7 +1384,8 @@ ggplot(after_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "After")
 ```
 
 
@@ -3075,7 +3079,8 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
-  theme_bw()
+  theme_bw() +
+  labs(title = "Can")
 ```
 
 ```{r modal_can_growth_model, include=FALSE}
@@ -3112,7 +3117,8 @@ ggplot(can_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Can")
 ```
 
 #### Could (Done)
@@ -3222,7 +3228,8 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
-  theme_bw()
+  theme_bw() +
+  labs(title = "Maybe")
 ```
 
 ```{r maybe_growth_model, include=FALSE}
@@ -3261,7 +3268,8 @@ ggplot(maybe_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + 
-  coord_cartesian(xlim = c(min(maybe_childdata$age), max(maybe_childdata$age)), ylim = c(min(maybe_childdata$cumulative_ppt), max(maybe_childdata$cumulative_ppt)))
+  coord_cartesian(xlim = c(min(maybe_childdata$age), max(maybe_childdata$age)), ylim = c(min(maybe_childdata$cumulative_ppt), max(maybe_childdata$cumulative_ppt))) +
+  labs(title = "Maybe")
 ```
 
 #### Might (Done)
@@ -3272,7 +3280,8 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Might")
 ```
 
 ```{r might_growth_model, include=FALSE}
@@ -3310,7 +3319,8 @@ ggplot(might_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Might")
 ```
 
 
@@ -3322,7 +3332,8 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "must")
 ```
 
 ```{r must_growth_model, include=FALSE}
@@ -3360,17 +3371,19 @@ ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Must")
 ```
 #### Should (Done)
 
 ```{r should_modal_plot, echo=FALSE}
 functionword_relfreq %>%
-  filter(word=="should") %>%
+  filter(word=="should", age>15) %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
-  theme_bw()
+  theme_bw() +
+  labs(title = "Should")
 ```
 
 ```{r should_growth_model, include=FALSE}

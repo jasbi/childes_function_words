@@ -6153,11 +6153,24 @@ age_df <-
 ```
 # syn category
 ```{r}
+
+age_df <- age_df %>% select(-syn_cat.y)
+```
+
+```{r}
 # collapse all the word types for each word in function_words_df
-function_words_df_collapsed <- function_words_df %>%
-  distinct(gloss, part_of_speech) %>%
-  group_by(gloss) %>%
-  summarise(part_of_speech = paste(part_of_speech, collapse = ", "), .groups = 'drop')
+#function_words_df_collapsed <- function_words_df %>%
+#  distinct(gloss, part_of_speech) %>%
+#  group_by(gloss) %>%
+#  summarise(part_of_speech = paste(part_of_speech, collapse = ", "), .groups = 'drop')
+
+# get the single POS tags
+syn_cat_df <- read_csv("syn_cat.csv", col_select = c(gloss, syn_cat), show_col_types = FALSE)
+
+# join to df
+age_df <- 
+  age_df %>% 
+  left_join(syn_cat_df, by = "gloss")
 ```
 
 # run plot on age_df

@@ -6190,10 +6190,19 @@ age_of_production_predictors <-
 # run regression
 m_full <- lm(Estimate ~ phoneme_length
                      + frequency
-                     + mean_utterance_length,
+                     + mean_utterance_length
+                     + Conc.M,
              data = age_of_production_predictors)
 summary(m_full)
+plot(m_full)
 
+# run regression with just the syn cat
+syn_cat_m <- lm(Estimate ~ syn_cat,
+                data = age_of_production_predictors)
+summary(syn_cat_m)
+plot(syn_cat_m)
+
+# plot with frequency
 ggplot(filter(age_of_production_predictors, Estimate<40), aes(x = Estimate, y=frequency)) +
   geom_point() + geom_smooth(method = "lm", se = FALSE)
 

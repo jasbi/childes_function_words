@@ -6153,11 +6153,6 @@ age_df <-
 ```
 # syn category
 ```{r}
-
-age_df <- age_df %>% select(-syn_cat.y)
-```
-
-```{r}
 # collapse all the word types for each word in function_words_df
 #function_words_df_collapsed <- function_words_df %>%
 #  distinct(gloss, part_of_speech) %>%
@@ -6176,25 +6171,40 @@ age_df <-
 # run plot on age_df
 ```{r}
 # rename gloss in age_df to word to match the RDS file age_of_production
-age_df <- age_df %>%
-  rename(
-    word = gloss,
-    frequency = count
-  )
+if ("gloss" %in% names(age_df)){
+  age_df <- age_df %>%
+    rename(
+      word = gloss,
+      frequency = count
+    ) 
+}
 
 # add the predictors to age_of_production
 age_of_production_predictors <-
   age_of_production %>%
   left_join(age_df, by = "word")
 
-# run regression
-m_full <- lm(Estimate ~ phoneme_length
+# run regression with addition
+add_reg <- lm(Estimate ~ phoneme_length
                      + frequency
                      + mean_utterance_length
-                     + Conc.M,
+                     + Conc.M
+                     + syn_cat,
              data = age_of_production_predictors)
-summary(m_full)
-plot(m_full)
+summary(add_reg)
+
+# run regression with multiplication
+mult_full <- lm(Estimate ~ phoneme_length
+                     * frequency
+                     * mean_utterance_length
+                     * Conc.M
+                     * syn_cat,
+             data = age_of_production_predictors)
+summary(mult_full)
+
+# plot the above models
+plot(add_reg)
+plot(mult_full)
 
 # run regression with just the syn cat
 syn_cat_m <- lm(Estimate ~ syn_cat,

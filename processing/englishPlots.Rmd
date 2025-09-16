@@ -6194,27 +6194,55 @@ add_reg <- lm(Estimate ~ phoneme_length
 summary(add_reg)
 
 # run regression with multiplication
-mult_full <- lm(Estimate ~ phoneme_length
+mult_reg <- lm(Estimate ~ phoneme_length
                      * frequency
                      * mean_utterance_length
                      * Conc.M
                      * syn_cat,
              data = age_of_production_predictors)
-summary(mult_full)
+summary(mult_reg)
+
+# save results
+library(broom)
+
+# Extract tidy results
+add_results <- tidy(add_reg)
+mult_results <- tidy(mult_reg)
+
+# Add model identifier
+add_results$model <- "additive"
+mult_results$model <- "multiplicative"
+
+# Combine and save
+all_results <- rbind(add_results, mult_results)
+write.csv(all_results, "regression_coefficients.csv", row.names = FALSE)
+
+# Save model statistics
+add_stats <- glance(add_reg)
+mult_stats <- glance(mult_reg)
+add_stats$model <- "additive"
+mult_stats$model <- "multiplicative"
+
+model_stats <- rbind(add_stats, mult_stats)
+write.csv(model_stats, "regression_model_statistics.csv", row.names = FALSE)
+
+cat("Results saved to:\n")
+cat("- regression_coefficients.csv\n")
+cat("- regression_model_statistics.csv\n")
 
 # plot the above models
-plot(add_reg)
-plot(mult_full)
+#plot(add_reg)
+#plot(mult_reg)
 
 # run regression with just the syn cat
-syn_cat_m <- lm(Estimate ~ syn_cat,
-                data = age_of_production_predictors)
-summary(syn_cat_m)
-plot(syn_cat_m)
+# syn_cat_m <- lm(Estimate ~ syn_cat,
+#                data = age_of_production_predictors)
+# summary(syn_cat_m)
+# plot(syn_cat_m)
 
 # plot with frequency
-ggplot(filter(age_of_production_predictors, Estimate<40), aes(x = Estimate, y=frequency)) +
-  geom_point() + geom_smooth(method = "lm", se = FALSE)
+# ggplot(filter(age_of_production_predictors, Estimate<40), aes(x = Estimate, y=frequency)) +
+ # geom_point() + geom_smooth(method = "lm", se = FALSE)
 
 ```
 
@@ -6276,6 +6304,60 @@ ggplot(cdi_data, aes(x = age, y = proportion, colour = word)) +
   theme_bw() +
   theme(axis.text = element_text(size = 14), legend.position = "none") +
   labs(x = "Age (Months)", y = "Proportion")
+```
+
+```{r}
+library(wordbankr)
+```
+
+```{r}
+# replicate the above graph from the R API
+# get all the data
+eng_ws_data <- get_instrument_data(language = "English (American)",
+                                   form = "WS",
+                                   administration_info = TRUE,
+                                   item_info = TRUE)
+
+# filter it down to just child_id, item_definition, produces boolean, age
+wordbank_df <- eng_ws_data %>% select(item_definition, age, produces, child_id)
+
+# clean item_definition column
+wordbank_df$item_definition <- trimws(tolower(wordbank_df$item_definition))
+
+# get just the function words
+func_wordbank <- wordbank_df[wordbank_df$item_definition %in% function_words,]
+
+# Calculate proportion of children producing each word at each age
+word_proportions <- func_wordbank %>%
+  group_by(item_definition, age) %>%
+  summarise(
+    total_children = n_distinct(child_id),
+    children_producing = sum(produces == TRUE),
+    proportion = children_producing / total_children,
+    .groups = 'drop'
+  )
+  
+# plot
+ggplot(word_proportions, aes(x = age, y = proportion, color = item_definition)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  labs(
+    title = "Proportion of Children Producing Each Word by Age",
+    x = "Age (months)",
+    y = "Proportion of Children",
+    color = "Word"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),
+    legend.position = "right",
+    legend.text = element_text(size = 8),      # Smaller text
+    legend.title = element_text(size = 10),    # Smaller title
+    legend.key.size = unit(0.5, "cm")          # Smaller legend keys
+  ) +
+  guides(color = guide_legend(ncol = 2))       # Two columns in legend
+
 ```
 
 ## Onset Age of Production Estimates

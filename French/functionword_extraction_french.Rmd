@@ -75,7 +75,7 @@ english_tokens <-
   filter(!gloss %in% babbles)
 
 # remove other unlikely words/transcription mistakes such as "vocalizing"
-#vector of ids
+#vector of token ids
 unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
 #first three are "vocalizes" or "vocalizing", "classic", "vocalizes", " references", "transcribed"
 english_tokens <- 

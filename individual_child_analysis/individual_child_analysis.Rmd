@@ -287,6 +287,7 @@ individual_children |>
   select(name, corpus_name, min_age, max_age) |>
   filter(!is.na(name),
          min_age <= 18,
+         max_age >= 20,
          !corpus_name %in% c("NewmanRatner", "Braunwald", "Brown",
                              "McCune", "Brent", "Davis-CDI",
                              "StanfordEnglish", "Peters", "Rollins",
@@ -342,10 +343,21 @@ Child_relfreq <- english_tokens %>%
 plots_list <- lapply(function_words, function(fw) {
   word_df <- Child_relfreq %>%
     filter(word == fw)
-  if (nrow(word_df) == 0) {
+  
+  # Filter to only include children speakers with at least 5 data points for this function word
+  child_counts <- word_df %>%
+    filter(speaker == "target_child") %>%
+    group_by(target_child_name) %>%
+    summarise(n_points = n()) %>%
+    filter(n_points >= 5)
+  
+  word_df_filtered <- word_df %>%
+    filter(!(speaker == "target_child" & !(target_child_name %in% child_counts$target_child_name)))
+  
+  if (nrow(word_df_filtered) == 0) {
     return(NULL)
   }
-  ggplot(word_df, aes(age, cumulative_ppt, color = speaker)) +
+  ggplot(word_df_filtered, aes(age, cumulative_ppt, color = speaker)) +
     geom_point() +
     geom_line() +
     facet_wrap(~ target_child_name) +
@@ -361,3 +373,123 @@ for (p in plots_list) {
 }
 ```
 
+
+
+
+## Plots for Providence (Lily, Naima), MacWhinney (Ross), Sachs (Naomi) for selected function words
+```{r}
+# Define the target children and the function words of interest
+selected_children <- tibble(
+  target_child_name = c("Lily", "Naima", "Ross", "Naomi"),
+  corpus_name = c("Providence", "Providence", "MacWhinney", "Sachs")
+)
+selected_function_words <- c("unless", "once", "if", "why", "all", "no", "by", "who", "on")
+```
+
+
+## Plots of cumulative_ppt trajectories for selected function words, faceted by selected children
+```{r}
+# Restrict the dataset to just the four target children and desired function words
+Child_relfreq <- english_tokens %>%
+  filter(
+    word %in% selected_function_words,
+    (target_child_name %in% selected_children$target_child_name) &
+      (corpus_name %in% selected_children$corpus_name)
+  ) %>%
+  group_by(word, age, speaker, target_child_name, corpus_name) %>%
+  summarise(freq = n(), .groups = "drop") %>%
+  group_by(speaker, age, target_child_name) %>%
+  mutate(total = sum(freq),
+         relfreq = freq / sum(freq),
+         ppt = relfreq * 1000) %>%
+  group_by(word, speaker, target_child_name) %>%
+  arrange(age) %>%
+  mutate(cum_freq = cumsum(freq), 
+         cum_total = cumsum(total), 
+         cumulative_relfreq = cumsum(freq) / cumsum(total), 
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
+  ungroup()
+
+plots_list <- lapply(selected_function_words, function(fw) {
+  word_df <- Child_relfreq %>%
+    filter(word == fw)
+  
+  # Filter to only include children speakers with at least 5 data points for this function word
+  child_counts <- word_df %>%
+    filter(speaker == "target_child") %>%
+    group_by(target_child_name) %>%
+    summarise(n_points = n()) %>%
+    filter(n_points >= 5)
+  
+  word_df_filtered <- word_df %>%
+    filter(!(
+      speaker == "target_child" &
+      !(target_child_name %in% child_counts$target_child_name)
+    ))
+  
+  if (nrow(word_df_filtered) == 0) {
+    return(NULL)
+  }
+  ggplot(word_df_filtered, aes(age, cumulative_ppt, color = speaker)) +
+    geom_point() +
+    geom_line() +
+    facet_wrap(~ target_child_name) +
+    theme_bw() +
+    labs(title = paste("Cumulative ppt for Function Word:", paste0(toupper(substring(fw, 1, 1)), substring(fw, 2))),
+         x = "Age (months)",
+         y = "Cumulative ppt",
+         color = "Speaker")
+})
+
+for (p in plots_list) {
+  if (!is.null(p)) print(p)
+}
+```
+
+
+
+
+
+
+
+
+
+
+# ORIGINAL CODE
+# ## Plots of cumulative_ppt trajectories for each function word, faceted by child
+# ```{r}
+# Child_relfreq <- english_tokens %>%
+#   group_by(word, age, speaker, target_child_name, corpus_name) %>%
+#   summarise(freq = n(), .groups = "drop") %>%
+#   group_by(speaker, age, target_child_name) %>%
+#   mutate(total = sum(freq),
+#          relfreq = freq / sum(freq),
+#          ppt = relfreq * 1000) %>%
+#   group_by(word, speaker, target_child_name) %>%
+#   arrange(age) %>%
+#   mutate(cum_freq = cumsum(freq), 
+#          cum_total = cumsum(total), 
+#          cumulative_relfreq = cumsum(freq) / cumsum(total), 
+#          cumulative_ppt = cumulative_relfreq * 1000) %>%
+#   ungroup()
+# 
+# plots_list <- lapply(function_words, function(fw) {
+#   word_df <- Child_relfreq %>%
+#     filter(word == fw)
+#   if (nrow(word_df) == 0) {
+#     return(NULL)
+#   }
+#   ggplot(word_df, aes(age, cumulative_ppt, color = speaker)) +
+#     geom_point() +
+#     geom_line() +
+#     facet_wrap(~ target_child_name) +
+#     theme_bw() +
+#     labs(title = paste("Cumulative ppt for function word:", fw),
+#          x = "Age (months)",
+#          y = "Cumulative ppt",
+#          color = "Speaker")
+# })
+# 
+# for (p in plots_list) {
+#   if (!is.null(p)) print(p)
+# }

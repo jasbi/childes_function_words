@@ -45,11 +45,6 @@ initial <- nrow(all_english_tokens)
 n_chi_initial <-
   all_english_tokens$target_child_id %>% unique() %>% length()
 
-# remove the unintelligible tokens
-# english_tokens <- 
-#   all_english_tokens %>% 
-#   filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
-
 english_tokens <- all_english_tokens # temporary line
 
 # count the tokens after excluding unintelligible ones
@@ -59,24 +54,10 @@ unintels <- nrow(english_tokens)
 n_chi_unintels <-
   english_tokens$target_child_id %>% unique() %>% length()
 
-## babbling ##
-
-# remove babbles
-# english_tokens <-
-#   english_tokens %>%
-#   filter(part_of_speech != "bab")
-
-# babbles that slipped by 
-babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
-
 # remove all glosses that are just a letter, except for A, a, I, and i
 #alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
 # filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
 
-#filter out babbles
-# english_tokens <- 
-#   english_tokens %>%
-#   filter(!gloss %in% babbles)
 
 # remove other unlikely words/transcription mistakes such as "vocalizing"
 #vector of ids
@@ -133,12 +114,6 @@ exclusions <-
     n_chi_babble = n_chi_babble_unreason,
     n_chi_nas = n_chi_nas,
     n_chi_age = n_chi_age)
-```
-
-```{r babbles}
-# add word_category column to english_tokens
-
-
 ```
 
 ```{r savingData}
@@ -653,19 +628,18 @@ english_tokens_contract$syncategory[english_tokens$word_category=="nonfunction"]
 # handle babbles here
 # babbles that slipped by will be given the part of speech "bab"
 babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+unintells <- c("xxx", "xx", "yyy", "www", "zzz")
 
-for (x in babbles){
+bab_unint <- c(babbles, unintells)
+
+# change the part of speech to bab
+for (x in bab_unint){
   english_tokens_contract$part_of_speech[english_tokens_contract$gloss==x] <- "bab"
 }
 
-for (x in babbles){
+for (x in bab_unint){
   english_tokens$part_of_speech[english_tokens$gloss==x] <- "bab"
 }
-
-english_tokens$syncategory[english_tokens$part_of_speech=="bab"] <- "babble"
-english_tokens_contract$syncategory[english_tokens_contract$part_of_speech=="bab"] <- "babble"
-
-
 ```
 
 ## Saving Summary Tables

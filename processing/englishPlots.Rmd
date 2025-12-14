@@ -13,6 +13,9 @@ library(ggeffects)
 library(ggrepel)
 ```
 
+```{r}
+knitr::opts_chunk$set(error = TRUE)
+```
 # Load Data
 
 ```{r processedEnglishTokens}

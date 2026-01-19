@@ -258,7 +258,7 @@ for (x in function_words){
 
 # Individual Children (CHILDES TalkBank & PhonBank)
 
-# Selecting Children
+# Selecting Children & Evaluating Token Production
 ## Selecting Children that Have Dense Data Between Ages 1-4
 ```{r count-tokens-per-child}
 # Count number of tokens for each child
@@ -274,6 +274,115 @@ tokens_per_child
 # Ten children who produced the most tokens between 1-4
 top_ten_children <- head(tokens_per_child, 10)
 top_ten_children
+```
+
+## Histograms
+
+```{r}
+# Create bins for age: 12-15, 16-19, ..., up to 44-47, 48 (all ages included in 12-48)
+age_bins <- seq(12, 48, by = 4)
+age_labels <- paste0(age_bins[-length(age_bins)], "-", age_bins[-1] - 1)
+age_labels[length(age_labels)] <- paste0(age_bins[length(age_bins)-1], "-", age_bins[length(age_bins)])
+
+# Assign each token to an age bin
+tokens_binned <- english_tokens_contract %>%
+  filter(
+    target_child_age >= 12 & target_child_age <= 48,
+    target_child_name %in% top_ten_children$target_child_name,
+    speaker == "child"
+  ) %>%
+  mutate(age_bin = cut(
+    target_child_age,
+    breaks = age_bins,
+    labels = age_labels,
+    include.lowest = TRUE,
+    right = FALSE
+  ))
+
+# Count tokens per child per age bin
+tokens_per_bin <- tokens_binned %>%
+  group_by(target_child_name, age_bin) %>%
+  summarise(token_count = n(), .groups = "drop")
+
+# Find the top child for each bin
+top_child_per_bin <- tokens_per_bin %>%
+  group_by(age_bin) %>%
+  top_n(1, token_count) %>%
+  ungroup()
+
+# Plot: Distribution of token counts per age bin for each child
+library(ggplot2)
+ggplot(tokens_per_bin, aes(x = age_bin, y = token_count, fill = target_child_name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Token Production by Top Children in Each Age Bin (12-48 months)",
+    x = "Age Bin (months)",
+    y = "Token Count",
+    fill = "Child"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Additionally, show which child is the top producer per bin
+top_child_table <- top_child_per_bin %>%
+  arrange(age_bin) %>%
+  select(age_bin, target_child_name, token_count)
+knitr::kable(top_child_table, caption = "Top Child Producer per Age Bin (12-48 months)")
+```
+
+# Density Plots
+```{r}
+# Density plots: Age distribution of tokens produced by each top ten child
+
+library(ggplot2)
+library(dplyr)
+
+# Filter to relevant tokens: 12-48 months, top ten children, child speaker only
+tokens_top_ten <- english_tokens_contract %>%
+  filter(
+    target_child_age >= 12 & target_child_age <= 48,
+    target_child_name %in% top_ten_children$target_child_name,
+    speaker == "child"
+  )
+
+# Density plot of target_child_age for each child (different color per child)
+ggplot(
+  tokens_top_ten,
+  aes(x = target_child_age, fill = target_child_name)
+) +
+  geom_density(alpha = 0.5, color = NA) +
+  labs(
+    title = "Age Distribution of Token Production: Top Ten Children (12-48 months)",
+    x = "Age (months)",
+    y = "Density",
+    fill = "Child"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# Optionally, show the densities faceted by child
+ggplot(
+  tokens_top_ten,
+  aes(x = target_child_age)
+) +
+  geom_density(fill = "deepskyblue", alpha = 0.6) +
+  facet_wrap(~ target_child_name, scales = "free_y") +
+  labs(
+    title = "Age Distribution of Token Production: Top Ten Children (12-48 months)",
+    x = "Age (months)",
+    y = "Density"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 # Cumulative Token Trajectory Plots for Selected Children and Function Words
@@ -375,7 +484,7 @@ plots_list <- lapply(selected_function_words, function(fw) {
     geom_line() +
     facet_wrap(~ target_child_name) +
     theme_bw() +
-    labs(title = paste("Cumulative ppt for Function Word:", paste0(toupper(substring(fw, 1, 1)), substring(fw, 2))),
+    labs(title = paste("Cumulative Relative Frequency of Function Word:", paste0(toupper(substring(fw, 1, 1)), substring(fw, 2))),
          x = "Age (months)",
          y = "Cumulative ppt",
          color = "Speaker")
@@ -437,7 +546,7 @@ plots_list <- lapply(selected_function_words, function(fw) {
     geom_point() +
     geom_line() +
     theme_bw() +
-    labs(title = paste("Cumulative ppt for Function Word:", paste0(toupper(substring(fw, 1, 1)), substring(fw, 2))),
+    labs(title = paste("Cumulative Relative Frequency for Function Word:", paste0(toupper(substring(fw, 1, 1)), substring(fw, 2))),
          x = "Age (months)",
          y = "Cumulative ppt",
          color = "Child")
@@ -485,7 +594,7 @@ ggplot(child_relfreq, aes(x = target_child_age, y = cumulative_ppt, color = targ
   facet_wrap(~ word, ncol = 2, scales = "free_y") +
   theme_bw() +
   labs(
-    title = "Cumulative Ppt for Selected Function Words",
+    #title = "Cumulative Relative Frequency for Selected Function Words",
     x = "Age (months)",
     y = "Cumulative Ppt",
     color = "Child"
@@ -499,86 +608,27 @@ ggplot(child_relfreq, aes(x = target_child_age, y = cumulative_ppt, color = targ
 ```
 
 
-## Histograms
-
+# Distribution of Function Word Production
 ```{r}
-# Create bins for age: 12-15, 16-19, ..., up to 44-47, 48 (all ages included in 12-48)
-age_bins <- seq(12, 48, by = 4)
-age_labels <- paste0(age_bins[-length(age_bins)], "-", age_bins[-1] - 1)
-age_labels[length(age_labels)] <- paste0(age_bins[length(age_bins)-1], "-", age_bins[length(age_bins)])
+# Distribution of Function Word Production
 
-# Assign each token to an age bin
-tokens_binned <- english_tokens_contract %>%
+# Filter to relevant tokens for selected function words and child speakers
+tokens_function_words <- english_tokens_contract %>%
   filter(
-    target_child_age >= 12 & target_child_age <= 48,
-    target_child_name %in% top_ten_children$target_child_name,
-    speaker == "child"
-  ) %>%
-  mutate(age_bin = cut(
-    target_child_age,
-    breaks = age_bins,
-    labels = age_labels,
-    include.lowest = TRUE,
-    right = FALSE
-  ))
-
-# Count tokens per child per age bin
-tokens_per_bin <- tokens_binned %>%
-  group_by(target_child_name, age_bin) %>%
-  summarise(token_count = n(), .groups = "drop")
-
-# Find the top child for each bin
-top_child_per_bin <- tokens_per_bin %>%
-  group_by(age_bin) %>%
-  top_n(1, token_count) %>%
-  ungroup()
-
-# Plot: Distribution of token counts per age bin for each child
-library(ggplot2)
-ggplot(tokens_per_bin, aes(x = age_bin, y = token_count, fill = target_child_name)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(
-    title = "Token Production by Top Children in Each Age Bin (12-48 months)",
-    x = "Age Bin (months)",
-    y = "Token Count",
-    fill = "Child"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    plot.title = element_text(hjust = 0.5)
-  )
-
-# Additionally, show which child is the top producer per bin
-top_child_table <- top_child_per_bin %>%
-  arrange(age_bin) %>%
-  select(age_bin, target_child_name, token_count)
-knitr::kable(top_child_table, caption = "Top Child Producer per Age Bin (12-48 months)")
-```
-
-# Density Plots
-```{r}
-# Density plots: Age distribution of tokens produced by each top ten child
-
-library(ggplot2)
-library(dplyr)
-
-# Filter to relevant tokens: 12-48 months, top ten children, child speaker only
-tokens_top_ten <- english_tokens_contract %>%
-  filter(
-    target_child_age >= 12 & target_child_age <= 48,
+    word %in% selected_function_words,
     target_child_name %in% top_ten_children$target_child_name,
     speaker == "child"
   )
 
-# Density plot of target_child_age for each child (different color per child)
+# 1. Density plot: Distribution of function word token production by age, per word, for top ten children.
 ggplot(
-  tokens_top_ten,
+  tokens_function_words,
   aes(x = target_child_age, fill = target_child_name)
 ) +
   geom_density(alpha = 0.5, color = NA) +
+  facet_wrap(~ word, ncol = 2, scales = "free_y") +
   labs(
-    title = "Density of Token Ages for Each Top Ten Child (12-48 months)",
+    title = "Distribution of Function Word Production by Child (Per Function Word)",
     x = "Age (months)",
     y = "Density",
     fill = "Child"
@@ -586,27 +636,31 @@ ggplot(
   theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1)
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 12)
   )
 
-# Optionally, show the densities faceted by child
+# 2. Density plot: Distribution of function word production by age, separate panel for each child
 ggplot(
-  tokens_top_ten,
-  aes(x = target_child_age)
+  tokens_function_words,
+  aes(x = target_child_age, fill = word)
 ) +
-  geom_density(fill = "deepskyblue", alpha = 0.6) +
-  facet_wrap(~ target_child_name, scales = "free_y") +
+  geom_density(alpha = 0.5, color = NA) +
+  facet_wrap(~ target_child_name, ncol = 2, scales = "free_y") +
   labs(
-    title = "Density of Token Ages by Child (12-48 months)",
+    title = "Distribution of Function Word Production by Child",
     x = "Age (months)",
-    y = "Density"
+    y = "Density",
+    fill = "Function Word"
   ) +
   theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1)
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 12)
   )
 ```
+
 
 
 

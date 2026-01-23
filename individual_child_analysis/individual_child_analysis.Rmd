@@ -109,7 +109,7 @@ exclusions <-
     n_chi_age = n_chi_age)
 ```
 
-## Saving the Sata
+## Saving the Data
 ```{r savingData}
 # Save the exclusion data in a file as well as the final data
 #write_csv(exclusions, "../raw_data/token_exclusions.csv")
@@ -256,9 +256,8 @@ for (x in function_words){
 ```
 
 
-# Individual Children (CHILDES TalkBank & PhonBank)
+# Evaluating Production of Individual Children
 
-# Selecting Children & Evaluating Token Production
 ## Selecting Children that Have Dense Data Between Ages 1-4
 ```{r count-tokens-per-child}
 # Count number of tokens for each child
@@ -333,7 +332,7 @@ top_child_table <- top_child_per_bin %>%
 knitr::kable(top_child_table, caption = "Top Child Producer per Age Bin (12-48 months)")
 ```
 
-# Density Plots
+## Density Plots
 ```{r}
 # Density plots: Age distribution of tokens produced by each top ten child
 
@@ -343,7 +342,7 @@ library(dplyr)
 # Filter to relevant tokens: 12-48 months, top ten children, child speaker only
 tokens_top_ten <- english_tokens_contract %>%
   filter(
-    target_child_age >= 12 & target_child_age <= 48,
+    target_child_age >= 12 & target_child_age <= 48, # not correct / limits the tokens
     target_child_name %in% top_ten_children$target_child_name,
     speaker == "child"
   )
@@ -385,7 +384,7 @@ ggplot(
   )
 ```
 
-# Cumulative Token Trajectory Plots for Selected Children and Function Words
+## Cumulative Token Trajectory Plots for Selected Children and Function Words
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=12, fig.height=8}
 library(ggplot2)
 library(dplyr)
@@ -429,7 +428,7 @@ ggplot(cumulative_traj, aes(x = target_child_age, y = cumulative, color = target
   )
 ```
 
-# Cumulative_ppt Trajectories of Selected Children and Parents
+## Cumulative PPT Trajectories of Selected Children and Parents
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=12, fig.height=8}
 library(ggplot2)
 library(dplyr)
@@ -495,7 +494,7 @@ for (p in plots_list) {
 }
 ```
 
-# Cumulative_ppt Trajectors of Children Who Produced Most Tokens (Individual Plots)
+## Cumulative PPT Trajectories of Children Who Produced Most Tokens (Individual Plots)
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=12, fig.height=8}
 library(ggplot2)
 library(dplyr)
@@ -504,12 +503,11 @@ library(dplyr)
 selected_function_words <- c("the", "and", "no", "not", "i", "you", "can", "have", "do", "it")
 
 # Restrict data to top ten children and desired function words, and only keep speaker == "child"
-child_relfreq <- english_tokens_contract %>%
-  filter(
-    word %in% selected_function_words,
-    target_child_name %in% top_ten_children$target_child_name,
-    speaker == "child"
-  ) %>%
+child_relfreq <-
+  english_tokens_contract %>%
+  filter(word %in% selected_function_words,
+         target_child_name %in% top_ten_children$target_child_name,
+         speaker == "child") %>%
   group_by(word, target_child_age, target_child_name) %>%
   summarise(freq = n(), .groups = "drop") %>%
   group_by(target_child_age, target_child_name) %>%
@@ -518,12 +516,10 @@ child_relfreq <- english_tokens_contract %>%
          ppt = relfreq * 1000) %>%
   group_by(word, target_child_name) %>%
   arrange(target_child_age) %>%
-  mutate(
-    cum_freq = cumsum(freq),
-    cum_total = cumsum(total),
-    cumulative_relfreq = cumsum(freq) / cumsum(total),
-    cumulative_ppt = cumulative_relfreq * 1000
-  ) %>%
+  mutate(cum_freq = cumsum(freq),
+         cum_total = cumsum(total),
+         cumulative_relfreq = cumsum(freq) / cumsum(total),
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
   ungroup()
 
 plots_list <- lapply(selected_function_words, function(fw) {
@@ -557,8 +553,8 @@ for (p in plots_list) {
 }
 ```
 
-# Cumulative_ppt Trajectories of Children Who Produced Most Tokens
-```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=12, fig.height=8}
+## Cumulative PPT Trajectories of Children Who Produced Most Tokens
+```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
 library(ggplot2)
 library(dplyr)
 
@@ -567,11 +563,9 @@ selected_function_words <- c("the", "and", "no", "not", "i", "you", "can", "have
 
 # Restrict data to top ten children and desired function words, and only keep speaker == "child"
 child_relfreq <- english_tokens_contract %>%
-  filter(
-    word %in% selected_function_words,
-    target_child_name %in% top_ten_children$target_child_name,
-    speaker == "child"
-  ) %>%
+  filter(word %in% selected_function_words,
+         target_child_name %in% top_ten_children$target_child_name,
+         speaker == "child") %>%
   group_by(word, target_child_age, target_child_name) %>%
   summarise(freq = n(), .groups = "drop") %>%
   group_by(target_child_age, target_child_name) %>%
@@ -580,12 +574,10 @@ child_relfreq <- english_tokens_contract %>%
          ppt = relfreq * 1000) %>%
   group_by(word, target_child_name) %>%
   arrange(target_child_age) %>%
-  mutate(
-    cum_freq = cumsum(freq),
-    cum_total = cumsum(total),
-    cumulative_relfreq = cumsum(freq) / cumsum(total),
-    cumulative_ppt = cumulative_relfreq * 1000
-  ) %>%
+  mutate(cum_freq = cumsum(freq),
+         cum_total = cumsum(total),
+         cumulative_relfreq = cumsum(freq) / cumsum(total),
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
   ungroup()
 
 # Plot: One panel per function word, with lines for each child
@@ -596,7 +588,7 @@ ggplot(child_relfreq, aes(x = target_child_age, y = cumulative_ppt, color = targ
   labs(
     #title = "Cumulative Relative Frequency for Selected Function Words",
     x = "Age (months)",
-    y = "Cumulative Ppt",
+    y = "Cumulative PPT",
     color = "Child"
   ) +
   theme(
@@ -608,7 +600,7 @@ ggplot(child_relfreq, aes(x = target_child_age, y = cumulative_ppt, color = targ
 ```
 
 
-# Distribution of Function Word Production
+## Distribution of Function Word Production
 ```{r}
 # Distribution of Function Word Production
 

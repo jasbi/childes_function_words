@@ -5,20 +5,14 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-# R Packages
-
 ```{r packages, include=FALSE}
 knitr::opts_chunk$set(error = TRUE)
-library(tidyverse)
 library(feather)
-library(brms)
-library(ggeffects)
-library(ggrepel)
 library(dplyr)
 library(ggplot2)
-library(childesr)
+library(purrr)
+library(patchwork)
 ```
-
 
 # Loading the Data
 
@@ -30,14 +24,16 @@ english_tokens_contract_processed <-
   read_feather("../processed_data/english_tokens_contract_processed.feather")
 ```
 
-# Overall Function Word Plots for Every Child
+# Function Word Analysis Across All Children
 
 ## Selected Function Words
 ```{r}
 selected_function_words <- c("the", "and", "no", "not", "i", "you", "can", "have", "do", "it")
 ```
 
-## Cumulative relative frequencies for individual function words when grouping by "word"
+## Cumulative Relative Frequency Calculation (Grouped by Word)
+
+Same code as in englishPlots.Rmd
 ```{r}
 functionword_relfreq <-
   english_tokens_contract_processed %>%
@@ -64,12 +60,11 @@ functionword_relfreq %>%
   theme_bw()
 ```
 
+# Analysis of Individual Child Production
 
-# Evaluating Production of Individual Children
+## Identifying Children with Dense Data between Ages 1-4
 
-## Selecting Children that Have Dense Data Between Ages 1-4 by counting token production
-
-### Counts All Tokens Produced by the Child between 1-4
+### Token Counts per Child (Ages 1-4)
 ```{r}
 tokens_per_child <- english_tokens_contract_processed %>%
   filter(target_child_age >= 12 & target_child_age <= 48) %>% # Filters to tokens produced 12-48 months
@@ -82,8 +77,9 @@ top_ten_children <- head(tokens_per_child, 10)
 top_ten_children
 ```
 
-### Counts All Tokens Produced by the Child
+### Token Counts per Child (All Ages)
 ```{r}
+# Possible that one of the top children found here may produce more tokens outside of the 1-4 age range so I thought top_ten_children might be a better way to select children
 alt_tokens_per_child <- english_tokens_contract_processed %>%
   group_by(collection_name, corpus_name, target_child_name, speaker = "child") %>%
   summarise(token_count = n(), .groups = "drop") %>%
@@ -94,11 +90,12 @@ alt_top_ten_children <- head(alt_tokens_per_child, 10)
 alt_top_ten_children
 ```
 
-## Relative Frequency Calculation
+## Cumulative Relative Frequency Calculation for Selected Children
 ```{r}
 child_relfreq <-
   english_tokens_contract_processed %>%
-  filter(target_child_name %in% top_ten_children$target_child_name, speaker == "child") %>%
+  filter(target_child_name %in% top_ten_children$target_child_name,
+         speaker == "child") %>%
   group_by(word, target_child_age, target_child_name) %>%
   summarise(freq = n(), .groups = "drop_last") %>%
   group_by(target_child_age, target_child_name) %>%
@@ -113,15 +110,18 @@ child_relfreq <-
          cumulative_ppt = cumulative_relfreq * 1000)
 ```
 
-# Cumulative PPT Plots
+# Cumulative PPT Plots for Individual Children
 
-## Cumulative PPT Trajectories of Children Who Produced Most Tokens (Plot w/ Panels)
+## Cumulative PPT Trajectories for Most Productive Children
+
+```{r}
+child_relfreq_filtered <-
+  child_relfreq %>%
+  filter(word %in% selected_function_words)
+# Note: I did not filter by word in original child_rel_freq data frame as this looks at the fraction of a particular selected function word out of all the selected function words
+```
+  
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
-# Filter to selected function words, top ten children, and restrict to child speaker
-child_relfreq_filtered <- child_relfreq %>%
-  filter(word %in% selected_function_words,
-         target_child_name %in% top_ten_children$target_child_name)
-
 ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
   geom_line() +
   scale_color_brewer(palette = "Spectral") +
@@ -137,19 +137,98 @@ ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, col
         legend.position = "bottom")
 ```
 
+## Aggregate Cumulative PPT Trajectories Across Selected Children (Per Function Word, Per Age)
 
-## Cumulative PPT Trajectories of Children Who Produced Most Tokens (Individual Plots for Each Function Word)
+Computes for each function word and child age, the combined cumulative PPT aggregate across the top children, starting from the already grouped/filtered data of selected children. Black lines show the pooled cumulative trend for each word, alongside the individual children's cumulative PPT trajectories.
+
+```{r}
+aggregate_cumulative_ppt <- child_relfreq_filtered %>%
+  group_by(word, target_child_age) %>%
+  summarise(count = sum(freq, na.rm = TRUE),
+            total = sum(total, na.rm = TRUE),
+            .groups = "drop") %>%
+  arrange(word, target_child_age) %>%
+  group_by(word) %>%
+  mutate(cumulative_count = cumsum(count),
+         cumulative_total = cumsum(total),
+         cumulative_relfreq = cumulative_count / cumulative_total,
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
+  ungroup()
+```  
+
+```{r cumulative_ppt_aggregate_over_selected_children, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
+ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, color = target_child_name, group = target_child_name)) +
+  geom_line(alpha = 0.6) +
+  geom_line(data = aggregate_cumulative_ppt,
+            aes(x = target_child_age, y = cumulative_ppt, group = NULL),
+            color = "black",
+            size = 1.2,
+            inherit.aes = FALSE) +
+  scale_color_brewer(palette = "Spectral") +
+  facet_wrap(~ word, ncol = 2, scales = "free_y") +
+  theme_bw() +
+  labs(x = "Age (months)",
+       y = "Cumulative PPT",
+       color = "Child") +
+  theme(plot.title = element_text(hjust = 0.5),
+        strip.text = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position = "bottom")
+```
+
+## Pooled Aggregate Cumulative PPT Trajectories (from original token data)
+
+The cumulative PPT aggregates are computed by pooling all tokens from all selected children for each function word and age, without first computing per-child aggregates. Slightly differs from above aggregate trend
+
+```{r}
+aggregate_from_tokens <- english_tokens_contract_processed %>%
+  filter(target_child_name %in% top_ten_children$target_child_name,
+         speaker == "child") %>%
+  group_by(word, target_child_age) %>%
+  summarise(freq = n(), .groups = "drop") %>%
+  group_by(target_child_age) %>%
+  mutate(total = sum(freq),
+         relfreq = freq / sum(freq),
+         ppt = relfreq * 1000) %>%
+  group_by(word) %>%
+  arrange(target_child_age) %>%
+  mutate(cum_freq = cumsum(freq),
+         cum_total = cumsum(total),
+         cumulative_relfreq = cumsum(freq) / cumsum(total),
+         cumulative_ppt = cumulative_relfreq * 1000) %>%
+  ungroup()
+```
+
+```{r pooled_aggregate_from_tokens_panels, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
+ggplot(child_relfreq_filtered %>% filter(word %in% selected_function_words),
+       aes(x = target_child_age, y = cumulative_ppt, color = target_child_name, group = target_child_name)) +
+  geom_line(alpha = 0.6) +
+  geom_line(data = aggregate_from_tokens %>% filter(word %in% selected_function_words),
+            aes(x = target_child_age, y = cumulative_ppt, group = NULL),
+            color = "black",
+            size = 1.2,
+            inherit.aes = FALSE) +
+  scale_color_brewer(palette = "Spectral") +
+  facet_wrap(~ word, ncol = 2, scales = "free_y") +
+  theme_bw() +
+  labs(x = "Age (months)",
+       y = "Cumulative PPT",
+       color = "Child") +
+  theme(plot.title = element_text(hjust = 0.5),
+        strip.text = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position = "bottom")
+```
+
+## Individual Plots: Cumulative PPT Trajectories per Function Word for Selected Children
 
 ```{r individual_cumulative_ppt_plots, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
-library(purrr)
-
-# Loop through each selected function word and plot
 plots <- map(selected_function_words, function(current_word) {
   p <- child_relfreq %>%
     filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
     ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
     geom_point() +
-    geom_line() +
+    geom_line() + # can remove if don't want line going through points
     scale_color_brewer(palette = "Spectral") +
     labs(title = paste0("Cumulative PPT Trajectory for '", current_word, "'"),
          x = "Age (months)",
@@ -161,63 +240,59 @@ plots <- map(selected_function_words, function(current_word) {
 })
 ```
 
+## Individual Plots: Cumulative PPT with Aggregate Overlay (Per Word)
 
-# Overall Cumulative PPT
-
-Overlay overall trend (for the ten children) onto plot with all the children using a black line
-Steps:
-1. Restrict english_tokens_contract_processed to just the 10 children
-2. Create the overall function word pplots like above
-3. Overlay and first cumulative PPT plot I have
-
-Note: Mentioned mean trend might not be the same as the aggregate trend (talk about on Fri)
-
-
-# Other Plots
-
-## Combined Plot: Overall Trends vs. Top Ten Children DOUBLE CHECK!!!!!!!!
-
-```{r combined_cumulative_ppt_plot, fig.width=14, fig.height=10}
-library(patchwork)
-
-# Compute the overall mean cumulative_ppt for each age and word
-overall_trend_df <- functionword_relfreq %>%
-  filter(word %in% selected_function_words, age > 12, speaker == "child") %>%
-  group_by(word, age) %>%
-  summarise(mean_cumulative_ppt = mean(cumulative_ppt, na.rm = TRUE), .groups = "drop")
-
-# Top ten children plus overall trend (red line) on SAME plot, panel per function word
-combined_panel <- child_relfreq %>%
-  filter(word %in% selected_function_words, target_child_name %in% top_ten_children$target_child_name) %>%
-  ggplot(aes(x = target_child_age, y = cumulative_ppt, group = target_child_name)) +
-  geom_line() +
-  # Overlay overall trend line in red
-  geom_line(
-    data = overall_trend_df,
-    aes(x = age, y = mean_cumulative_ppt),
-    inherit.aes = FALSE,
-    color = "red",
-    linetype = "solid"
-  ) +
-  facet_wrap(~ word, ncol = 2, scales = "free_y") +
-  labs(
-    title = "Cumulative PPT Trajectories of Top Ten Children (Black) and Overall Mean (Red)",
-    x = "Age (months)",
-    y = "Cumulative PPT"
-  ) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    strip.text = element_text(size = 12),
-    axis.text = element_text(size = 10),
-    legend.position = "none"
-  )
-
-combined_panel
+```{r individual_cumulative_ppt_aggregate_overlay, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
+plots_aggregate_overlay <- map(selected_function_words, function(current_word) {
+  p <- child_relfreq %>%
+    filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
+    ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
+    geom_point() +
+    geom_line() +
+    geom_line(data = aggregate_cumulative_ppt %>% filter(word == current_word),
+              aes(x = target_child_age, y = cumulative_ppt, group = NULL),
+              inherit.aes = FALSE,
+              color = "black",
+              size = 1.2) +
+    scale_color_brewer(palette = "Spectral") +
+    labs(title = paste0("Cumulative PPT for '", current_word, "'"),
+         x = "Age (months)",
+         y = "Cumulative PPT",
+         color = "Child") +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
+  print(p)
+})
 ```
 
+## Individual Plots: Cumulative PPT with Pooled Aggregate Overlay (Per Function Word)
 
-## Distribution of function word token production by age, per word, for top ten children.
+```{r individual_cumulative_ppt_pooled_aggregate_overlay, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
+plots_pooled_overlay <- map(selected_function_words, function(current_word) {
+  p <- child_relfreq %>%
+    filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
+    ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
+    geom_point() +
+    geom_line() +
+    geom_line(data = aggregate_from_tokens %>% filter(word == current_word),
+              aes(x = target_child_age, y = cumulative_ppt, group = NULL),
+              inherit.aes = FALSE,
+              color = "black",
+              size = 1.2) +
+    scale_color_brewer(palette = "Spectral") +
+    labs(title = paste0("Cumulative PPT for '", current_word, "'"),
+         x = "Age (months)",
+         y = "Cumulative PPT",
+         color = "Child") +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
+  print(p)
+})
+```
+
+# Additional Plots
+
+## Distribution of Function Word Production by Child
 ```{r function_word_density_by_child, fig.width=10, fig.height=10}
 tokens_function_words <- english_tokens_contract_processed %>%
   filter(word %in% selected_function_words,
@@ -229,22 +304,18 @@ ggplot(tokens_function_words,
   geom_density(alpha = 0.5, color = NA) +
   scale_fill_brewer(palette = "Spectral") +
   facet_wrap(~ word, ncol = 2, scales = "free_y") +
-  labs(
-    #title = "Distribution of Function Word Production by Child",
-    x = "Age (months)",
-    y = "Density",
-    fill = "Child"
-  ) +
+  labs(x = "Age (Months)",
+       y = "Density",
+       fill = "Child") +
   theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    strip.text = element_text(size = 12),
-    legend.position = "bottom"
-  )
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 12),
+        legend.position = "bottom")
 ```
 
-## Age distribution of tokens produced by each top ten child
+## Distribution of All Tokens Produced by Each Selected Child
+
 ```{r}
 tokens_top_ten <- english_tokens_contract_processed %>%
   filter(target_child_name %in% top_ten_children$target_child_name,
@@ -254,8 +325,8 @@ tokens_top_ten <- english_tokens_contract_processed %>%
 ```{r}
 ggplot(tokens_top_ten, aes(x = target_child_age, fill = target_child_name)) +
   geom_density(alpha = 0.5, color = NA) +
-  labs(#title = "Age Distribution of Token Production: Top Ten Children (12-48 months)",
-       x = "Age (months)",
+  labs(
+       x = "Age (Months)",
        y = "Density",
        fill = "Child") +
   theme_bw() +
@@ -263,15 +334,53 @@ ggplot(tokens_top_ten, aes(x = target_child_age, fill = target_child_name)) +
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+## Density Plot by Individual Child (All Tokens)
 ```{r}
-# Densities faceted by child
 ggplot(tokens_top_ten, aes(x = target_child_age)) +
   geom_density(fill = "deepskyblue", alpha = 0.6) +
   facet_wrap(~ target_child_name, scales = "free_y") +
-  labs(#title = "Distribution of Token Production: Top Ten Children (12-48 months)",
-       x = "Age (months)",
+  labs(
+       x = "Age (Months)",
        y = "Density") +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Overall Mean Trends vs. Selected Children (Per Function Word)
+
+Computes the overall mean cumulative PPT for each word and age across all children
+
+```{r}
+
+overall_mean_trend <- functionword_relfreq %>%
+  filter(word %in% selected_function_words, age > 12, speaker == "child") %>%
+  group_by(word, age) %>%
+  summarise(mean_cumulative_ppt = mean(cumulative_ppt, na.rm = TRUE), .groups = "drop")
+```
+
+```{r combined_cumulative_ppt_plot, fig.width=10, fig.height=10}
+combined_panel <-
+  child_relfreq %>%
+  filter(word %in% selected_function_words,
+         target_child_name %in% top_ten_children$target_child_name) %>%
+  ggplot(aes(x = target_child_age, y = cumulative_ppt, group = target_child_name, color = target_child_name)) +
+  geom_line(alpha = 0.6) +
+  geom_line(data = overall_mean_trend,
+            aes(x = age, y = mean_cumulative_ppt),
+            color = "black",
+            linetype = "solid",
+            size = 1.2,
+            inherit.aes = FALSE) +
+  scale_color_brewer(palette = "Spectral") +
+  facet_wrap(~ word, ncol = 2, scales = "free_y") +
+  labs(x = "Age (Months)",
+       y = "Cumulative PPT",
+       color = "Child") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        strip.text = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position = "bottom")
+combined_panel
 ```

@@ -23,81 +23,89 @@ all_english_tokens <- get_tokens(collection = c("Eng-NA","Eng-UK"),
                           token = "*")
 ```
 
-we should make sure all words are in lower case:
+We save the downladed data as an RDS file for future use:
 
-```{r lowerCase}
-all_english_tokens$gloss <- all_english_tokens$gloss %>% tolower()
+```{r}
+write_csv(all_english_tokens, "../raw_data/all_english_tokens.csv")
 ```
 
 # Token Processing
 
 ## Exclusions
 
-The following script cleans up the data to exclude: unintelligible tokens and tokens above 72 months of the child's age. All exclusions are stored in a file called exclusions.csv
+The following script cleans up the data to make tokens lower case and exclude tokens above 72 months of the child's age. All exclusions are stored in a file called exclusions.csv
 
 ```{r exclusionsTokens}
+# we should make sure all words are in lower case:
+all_english_tokens$gloss <- all_english_tokens$gloss %>% tolower()
+
 # count the tokens before exclusions
-initial <- nrow(all_english_tokens)
+n_tokens_before_exclusions <- nrow(all_english_tokens)
 
 # number of children before exclusions
-n_chi_initial <-
+n_chi_before_exclusions <-
   all_english_tokens$target_child_id %>% unique() %>% length()
 
-# remove the unintelligible tokens
-english_tokens <- 
-  all_english_tokens %>% 
-  filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
+# It is possible to remove the unintelligible tokens. We don't, because we believe these are children's productions that may have been misunderstood or mis-transcribed. Removing them would bias the data against children's productions.
+
+#english_tokens <- 
+#  all_english_tokens %>% 
+#  filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
 
 # count the tokens after excluding unintelligible ones
-unintels <- nrow(english_tokens)
+#n_unintelligibles_removed <- nrow(english_tokens)
 
 # number of children after excluding unintelligible tokens
-n_chi_unintels <-
-  english_tokens$target_child_id %>% unique() %>% length()
-
-## babbling ##
+#n_chi_unintelligibles_removed <-
+#  english_tokens$target_child_id %>% unique() %>% length()
 
 # remove babbles
-english_tokens <-
-  english_tokens %>%
-  filter(part_of_speech != "bab")
+# english_tokens <-
+#  english_tokens %>%
+#  filter(part_of_speech != "bab")
 
 # babbles that slipped by 
-babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+#babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
 
 # remove all glosses that are just a letter, except for A, a, I, and i
 #alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
 # filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
 
 #filter out babbles
-english_tokens <- 
-  english_tokens %>%
-  filter(!gloss %in% babbles)
+#english_tokens <- 
+#  english_tokens %>%
+#  filter(!gloss %in% babbles)
 
-# remove other unlikely words/transcription mistakes such as "vocalizing"
-#vector of ids
+# count the tokens after excluding babbles
+#n_tokens_babble_removed <- nrow(english_tokens)
+
+#n_chi_babble_removed <-
+#  english_tokens$target_child_id %>% unique() %>% length()
+
+# The following lines remove clear transcription mistakes such as "vocalizing" appearing as speech of children.
+#vector of ids. First three are "vocalizes" or "vocalizing", "classic", "vocalizes", " references", "transcribed"
 unreasonable_id <- c(10927346, 10937151, 11379328, 11382701, 10972379, 11030373, 11030647, 4030824, 10114202)
-#first three are "vocalizes" or "vocalizing", "classic", "vocalizes", " references", "transcribed"
+
 english_tokens <- 
-  english_tokens %>%
+  all_english_tokens %>%
   filter(!id %in% unreasonable_id)
 
 # count the tokens after excluding babbles and unreasonable words
-babble_unreasonable <- nrow(english_tokens)
+n_tokens_unreasonable_removed <- nrow(english_tokens)
 
 # number of children after excluding babbles/unreasonable tokens
-n_chi_babble_unreason <-
+n_chi_unreasonable_removed <-
   english_tokens$target_child_id %>% unique() %>% length()
 
-# remove NAs target_child_age
+# removing rows for which age information for the child does not exist
 english_tokens <- 
   english_tokens %>% drop_na(target_child_age)
 
 # count the tokens after removing NA tokens
-nas <- nrow(english_tokens)
+n_tokens_ageNAs_removed <- nrow(english_tokens)
 
 # number of children after excluding NAs
-n_chi_nas <-
+n_chi_ageNAs_removed <-
   english_tokens$target_child_id %>% unique() %>% length()
 
 #Take out data for the age range above 6 years
@@ -106,35 +114,38 @@ english_tokens <-
   filter(target_child_age < 72)
 
 # count the tokens after excluding the below 1 and older than 6 age range
-age_ex <- nrow(english_tokens)
+n_tokens_ageOver72mo_removed <- nrow(english_tokens)
 
 # number of children left after exclusions
-n_chi_age <-
+n_chi_ageOver72mo_removed <-
   english_tokens$target_child_id %>% unique() %>% length()
 
 # record the dataframe of exclusions
 exclusions <-
   data.frame (
-    initial = initial,
-    after_unintels = unintels,
-    after_babbles = babble_unreasonable,
-    after_nas = nas,
-    after_age = age_ex,
-    unintelligible = initial - unintels,
-    babbles = unintels - babble_unreasonable,
-    missing = babble_unreasonable - nas,
-    age = nas - age_ex,
-    n_chi_total = n_chi_initial,
-    n_chi_unintels = n_chi_unintels,
-    n_chi_babble = n_chi_babble_unreason,
-    n_chi_nas = n_chi_nas,
-    n_chi_age = n_chi_age)
+    n_tokens_before_exclusions = n_tokens_before_exclusions,
+#   n_after_unintelligibles = n_unintelligibles_removed,
+#   n_after_babbles = n_tokens_babble_removed
+   n_after_unreasonable = n_tokens_unreasonable_removed,
+    n_after_ageNAs = n_tokens_ageNAs_removed,
+    n_after_age72mo = n_tokens_ageOver72mo_removed,
+#    unintelligible = n_tokens_before_exclusions - n_unintelligibles_removed,
+#    babbles = n_unintelligibles_removed - n_tokens_babble_removed,
+    unreasonable = n_tokens_before_exclusions - n_tokens_unreasonable_removed,
+    missing_age = n_tokens_unreasonable_removed - n_tokens_ageNAs_removed,
+    Over72mo = n_tokens_ageNAs_removed - n_tokens_ageOver72mo_removed,
+    n_chi_total = n_chi_before_exclusions,
+#    n_chi_unintelligibles = n_chi_unintelligibles_removed,
+#    n_chi_babble = n_chi_babble_removed,
+    n_chi_unreasonble = n_chi_unreasonable_removed,
+    n_chi_ageNAs = n_chi_ageNAs_removed,
+    n_chi_age72over = n_chi_ageOver72mo_removed)
 ```
 
 ```{r savingData}
 # save the exclusion data in a file as well as the final data
-#write_csv(exclusions, "../raw_data/token_exclusions.csv")
-write_feather(english_tokens, "../raw_data/english_tokens.feather")
+write_csv(exclusions, "../raw_data/exclusions_summary.csv")
+write_csv(english_tokens, "../raw_data/english_tokens_excluded.csv")
 ```
 
 ## Coding Speaker Roles
@@ -191,7 +202,6 @@ This chunk of code separates contracted morphemes in the "gloss" column, then ad
 english_tokens_contract <-
   english_tokens %>%
   mutate(gloss = str_replace(gloss, "cannot", "cann'ot"))
-
 ```
 
 ```{r}
@@ -295,11 +305,6 @@ Here is a list of our function words:
 
 Then we create a word column that marks all words as "other". Then we mark the function words of interest.
 
-```{r NLTK list}
-c('couldn', "couldn't",
- "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shouldn', "shouldn't", "won't", 'wouldn', "wouldn't")
-```
-
 ```{r FunctionWords}
 english_tokens_contract$word <- "nonfunction"
 
@@ -308,7 +313,6 @@ function_words_contract <- c("no", "not", "n't", "'ll", "'s", "'d", "'m", "yes",
 for (x in function_words_contract){
   english_tokens_contract$word[english_tokens_contract$gloss==x] <- x
 }
-
 
 # create separate function words that do include the function words as their own words
 english_tokens$word <- "nonfunction"
@@ -634,7 +638,7 @@ english_tokens$syncategory <- "Function"
 english_tokens$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
 
 english_tokens_contract$syncategory <- "Function"
-english_tokens_contract$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
+english_tokens_contract$syncategory[english_tokens_contract$word_category=="nonfunction"] <- "nonfunction"
 ```
 
 ## Saving Summary Tables

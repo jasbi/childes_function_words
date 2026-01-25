@@ -1,0 +1,260 @@
+---
+title: "English Linear Model"
+author: "Aaron Pilapil"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(feather)
+library(brms)
+library(ggeffects)
+library(ggrepel)
+```
+
+# Load Data
+
+```{r processedEnglishTokens}
+english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+
+english_tokens_contract_processed <-
+read_feather("../processed_data/english_tokens_contract_processed.feather")
+```
+
+# Linear Model
+
+## phoneme length
+```{r}
+function_words = c("no", "not", "nt", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "same", "different", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
+
+phoneme_len_df <- data.frame(
+  gloss = function_words,
+  
+  phoneme_length = c(2, 3, 1, 3, 3, 2, 2, 3, 6, 3, 3, 2, 4, 2, 4, 3, 4, 6, 3, 3, 7, 6, 7, 8, 5, 7, 6, 5, 6, 7, 3, 3, 3, 4, 4, 3, 3, 2, 3, 3, 3, 4, 5, 2, 3, 3, 4, 6, 3, 4, 4, 5, 6, 3, 4, 4, 4, 3, 3, 3, 2, 3, 3, 2, 4, 4, 6, 3, 3, 3, 4, 3, 6, 6, 6, 6, 5, 6, 3, 3, 2, 1, 2, 3, 3, 3, 3, 5, 8, 6, 4, 7, 4, 4, 4, 2, 3, 4, 5, 3, 5, 4, 6, 5, 2, 3, 3, 3, 3, 2, 2, 3, 2, 2, 2, 2, 3, 4, 4, 4, 4, 3, 6, 5, 5, 6, 5, 4, 3, 4, 6, 3, 3, 3, 3, 5, 3, 4, 2, 2, 2, 3, 2, 2, 3, 4, 3, 3, 3, 5, 2, 3, 3, 4, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3, 3, 4, 3, 3, 4, 6, 6, 7, 7, 6, 8, 8, 2, 6, 4, 2, 4, 5, 3, 4, 4, 4, 4, 4, 5, 3, 4, 4, 2, 3, 6, 6, 6, 3, 4, 6, 3, 7, 3, 3, 5, 4, 2, 4, 5, 2, 2, 3, 2, 6)
+  
+)
+
+# age_of_production <- age_of_production %>%
+#  left_join(phoneme_lengths, by = "word")
+
+```
+
+## POS
+```{r}
+# make english_tokens_contract_processed just one instance of each function word
+
+function_words_df <-
+  english_tokens_contract_processed %>% 
+  filter(gloss %in% function_words)
+
+function_words_unique <-
+  function_words_df %>% 
+  distinct(gloss, .keep_all = TRUE)
+
+# get just the POS into its own df
+pos_df <- function_words_unique %>% select(gloss, part_of_speech)
+
+# merge them with the main df
+phoneme_POS_df <- 
+  phoneme_len_df %>% 
+  left_join(pos_df, by = "gloss")
+```
+
+## Parental relative frequency
+```{r}
+# get total amount of words said by parent
+# english_tokens_contract_processed
+
+total_words <- 
+  english_tokens_contract_processed %>%
+  filter(speaker == "parent") %>%
+  nrow()
+
+# for each word, count rows where the parent is the speaker and the gloss is the word of interest
+
+counts <- function_words_df %>%
+  filter(speaker == "parent") %>%
+  count(gloss, name = "count")
+
+# …then left-join onto all words, filling NAs with 0
+counts_df <- tibble(gloss = function_words) %>%
+  left_join(counts, by = "gloss") %>%
+  replace_na(list(count = 0))
+
+# now divide all these counts by the total word count
+rel_freq <- counts_df %>%
+  mutate(count = count/total_words)
+
+# merge this with the age df
+phoneme_POS_freq_df <- 
+  phoneme_POS_df %>% 
+  left_join(rel_freq, by = "gloss")
+```
+
+## MLU
+```{r}
+# english_tokens_contract_processed
+
+# get a just the children's utterances
+child_tokens <-
+  english_tokens_contract_processed %>%
+  filter(speaker == "child")
+
+# get length of each utterance
+utterance_lengths <- 
+  child_tokens %>%
+  group_by(utterance_id) %>%
+  summarise(utterance_length = n())
+
+# join the utterance lengths back onto the table
+child_tokens_utter_lengths <-
+  child_tokens %>% 
+  left_join(utterance_lengths, by = "utterance_id") %>%
+  group_by(gloss) %>%
+  summarise(mean_utterance_length = mean(utterance_length))%>%
+  arrange(gloss)
+
+# filter this so that it's just the function words
+mean_length_utterance <-
+  child_tokens_utter_lengths %>%
+  filter(gloss %in% function_words) %>%
+  select(gloss, mean_utterance_length)
+
+# join this with the main dataframe
+age_df <- 
+  phoneme_POS_freq_df %>% 
+  left_join(mean_length_utterance, by = "gloss")
+
+# from aaron: age_df is the one you want to merge with! 
+
+```
+
+## concreteness scores
+```{r}
+# read in the concreteness scores for each function word into a column
+library(readxl)
+concreteness_scale <- read_excel("../raw_data/concreteness_scale.xlsx")
+concreteness_scale <- concreteness_scale %>%
+   mutate(Word = tolower(Word))
+
+# filter it to just the function words
+function_concreteness_scale <-
+   concreteness_scale %>% 
+   filter(Word %in% function_words)
+
+# certain words don't have a score
+missing_words <- setdiff(function_words, function_concreteness_scale$Word)
+
+# make it just the words and the concreteness
+function_concreteness_scale <- function_concreteness_scale %>%
+  select(Word, Conc.M)
+
+function_concreteness_scale <- function_concreteness_scale %>%
+  rename(gloss = Word)
+
+# join to age_df
+age_df <- 
+  age_df %>% 
+  left_join(function_concreteness_scale, by = "gloss")
+```
+
+## syn category
+```{r}
+# collapse all the word types for each word in function_words_df
+#function_words_df_collapsed <- function_words_df %>%
+#  distinct(gloss, part_of_speech) %>%
+#  group_by(gloss) %>%
+#  summarise(part_of_speech = paste(part_of_speech, collapse = ", "), .groups = 'drop')
+
+# get the single POS tags
+syn_cat_df <- read_csv("syn_cat.csv", col_select = c(gloss, syn_cat), show_col_types = FALSE)
+
+# join to df
+age_df <- 
+  age_df %>% 
+  left_join(syn_cat_df, by = "gloss")
+```
+
+## run plot on age_df
+```{r}
+# rename gloss in age_df to word to match the RDS file age_of_production
+if ("gloss" %in% names(age_df)){
+  age_df <- age_df %>%
+    rename(
+      word = gloss,
+      frequency = count
+    ) 
+}
+
+age_of_production <- readRDS("age_of_production.RDS")
+
+# add the predictors to age_of_production
+age_of_production_predictors <-
+  age_of_production %>%
+  left_join(age_df, by = "word")
+
+# run regression with addition
+add_reg <- lm(Estimate ~ phoneme_length
+                     + frequency
+                     + mean_utterance_length
+                     + Conc.M
+                     + syn_cat,
+             data = age_of_production_predictors)
+summary(add_reg)
+
+# run regression with multiplication
+mult_reg <- lm(Estimate ~ phoneme_length
+                     * frequency
+                     * mean_utterance_length
+                     * Conc.M
+                     * syn_cat,
+             data = age_of_production_predictors)
+summary(mult_reg)
+
+summary(lm(Estimate ~ phoneme_length + frequency + mean_utterance_length + Conc.M,
+             data = age_of_production_predictors))
+
+# save results
+library(broom)
+
+# Extract tidy results
+add_results <- tidy(add_reg)
+mult_results <- tidy(mult_reg)
+
+# Add model identifier
+add_results$model <- "additive"
+mult_results$model <- "multiplicative"
+
+# Combine and save
+all_results <- rbind(add_results, mult_results)
+write.csv(all_results, "regression_coefficients.csv", row.names = FALSE)
+
+# Save model statistics
+add_stats <- glance(add_reg)
+mult_stats <- glance(mult_reg)
+add_stats$model <- "additive"
+mult_stats$model <- "multiplicative"
+
+model_stats <- rbind(add_stats, mult_stats)
+write.csv(model_stats, "regression_model_statistics.csv", row.names = FALSE)
+
+cat("Results saved to:\n")
+cat("- regression_coefficients.csv\n")
+cat("- regression_model_statistics.csv\n")
+
+# plot the above models
+#plot(add_reg)
+#plot(mult_reg)
+
+# run regression with just the syn cat
+# syn_cat_m <- lm(Estimate ~ syn_cat,
+#                data = age_of_production_predictors)
+# summary(syn_cat_m)
+# plot(syn_cat_m)
+
+# plot with frequency
+# ggplot(filter(age_of_production_predictors, Estimate<40), aes(x = Estimate, y=frequency)) +
+ # geom_point() + geom_smooth(method = "lm", se = FALSE)
+
+```

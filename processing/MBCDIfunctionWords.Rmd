@@ -1,0 +1,132 @@
+---
+title: "Wordbank MB-CDI Function Word Trajectories"
+author: "Masoud Jasbi"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(feather)
+library(brms)
+library(ggeffects)
+library(ggrepel)
+```
+
+# Load Data
+
+```{r processedEnglishTokens}
+english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+
+english_tokens_contract_processed <-
+read_feather("../processed_data/english_tokens_contract_processed.feather")
+```
+
+# Load MB-CDI Function Word Data
+
+```{r}
+cdi_data <- 
+  read_csv("../raw_data/wordbank_functionword_trajectories.csv") %>%
+  gather("word", "proportion", a:how)
+
+#write_csv(cdi_data, "../processed_data/cdi_functionwords.csv")
+```
+
+```{r functionWordPlots}
+cdi_data <- read_csv("../processed_data/cdi_functionwords.csv")
+
+# Get the last point for each line
+last_points <- cdi_data %>%
+  group_by(word) %>%
+  slice_max(order_by = age, n = 1)
+
+# Plot with labels at the end of each line, avoiding overlap
+ggplot(cdi_data, aes(x = age, y = proportion, colour = word)) +
+  geom_line() +
+  geom_text_repel(data = last_points, aes(label = word), 
+                  nudge_x = 1, # Horizontal nudging for clarity
+                  direction = "y", # Allow vertical adjustment
+                  color = "black", # Label color
+                  show.legend = FALSE) + # Suppress legend
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1)) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 14), legend.position = "none") +
+  labs(x = "Age (Months)", y = "Proportion")
+```
+
+```{r}
+library(wordbankr)
+```
+
+```{r}
+# replicate the above graph from the R API
+# get all the data
+eng_ws_data <- get_instrument_data(language = "English (American)",
+                                   form = "WS",
+                                   administration_info = TRUE,
+                                   item_info = TRUE)
+
+# filter it down to just child_id, item_definition, produces boolean, age
+wordbank_df <- eng_ws_data %>% select(item_definition, age, produces, child_id)
+
+# clean item_definition column
+wordbank_df$item_definition <- trimws(tolower(wordbank_df$item_definition))
+
+# get just the function words
+func_wordbank <- wordbank_df[wordbank_df$item_definition %in% function_words,]
+
+# Calculate proportion of children producing each word at each age
+word_proportions <- func_wordbank %>%
+  group_by(item_definition, age) %>%
+  summarise(
+    total_children = n_distinct(child_id),
+    children_producing = sum(produces == TRUE),
+    proportion = children_producing / total_children,
+    .groups = 'drop'
+  )
+  
+# plot
+ggplot(word_proportions, aes(x = age, y = proportion, color = item_definition)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  labs(
+    title = "Proportion of Children Producing Each Word by Age",
+    x = "Age (months)",
+    y = "Proportion of Children",
+    color = "Word"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),
+    legend.position = "right",
+    legend.text = element_text(size = 8),      # Smaller text
+    legend.title = element_text(size = 10),    # Smaller title
+    legend.key.size = unit(0.5, "cm")          # Smaller legend keys
+  ) +
+  guides(color = guide_legend(ncol = 2))       # Two columns in legend
+
+```
+
+## Onset Age of Production Estimates
+
+```{r}
+CDI_onset_age <- 
+  cdi_data %>%
+  group_by(word) %>%
+  summarise(
+    age_above_0.1 = min(age[proportion >= 0.1], na.rm = TRUE),
+    age_above_0.15 = min(age[proportion >= 0.15], na.rm = TRUE),
+    age_above_0.2 = min(age[proportion >= 0.2], na.rm = TRUE)
+  )
+```
+
+```{r}
+CDI_onset_age %>%
+  ggplot(aes(x = age_above_0.15, y = reorder(word, age_above_0.15))) +
+  geom_pointrange(aes(xmin = age_above_0.1, xmax = age_above_0.2)) +
+  theme_bw() + 
+  theme(axis.text.y = element_text(size = 14), xlab = "age") + 
+  labs(x = "Age (Months)", y = "") +
+  scale_x_continuous(breaks = seq(min(CDI_onset_age$age_above_0.15), max(CDI_onset_age$age_above_0.15), by = 1))
+```

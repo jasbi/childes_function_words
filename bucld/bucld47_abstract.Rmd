@@ -58,8 +58,13 @@ plot2 <- age_of_production_plot %>%
   ggplot(aes(x = Estimate, y = word)) +
   geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
   theme_bw() +
-  theme(axis.text.y = element_text(size = 11)) +
-  labs(x = "Age (Months)", y = "")
+  theme(
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 15)
+  ) +
+  labs(x = "Age (Months)", y = "") +
+  scale_x_continuous(breaks = seq(0, 60, by = 3))
 
 # Combine the ggplot and the image
 grid.arrange(plot2, img_grob, plot1, layout_matrix = rbind(c(1, 2), c(1, 3)))

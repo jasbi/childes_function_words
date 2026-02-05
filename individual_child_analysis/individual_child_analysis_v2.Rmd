@@ -29,6 +29,8 @@ english_tokens_contract_processed <-
 ## Selected Function Words
 ```{r}
 selected_function_words <- c("the", "and", "no", "not", "i", "you", "can", "have", "do", "it")
+
+function_words <- c("no", "not", "I’m", "you’re", "he’s", "she’s", "it’s", "we’re", "they’re","i’ve", "you’ve", "we’ve", "they’ve", "i’d", "you’d", "he’d", "she’d", "we’d", "they’d", "i’ll", "you’ll", "he’ll", "she’ll", "we’ll", "they’ll", "don’t", "doesn’t", "didn’t", "isn’t", "aren’t", "wasn’t", "weren’t", "haven’t", "hasn’t", "hadn’t","can’t", "couldn’t", "won’t", "wouldn’t", "shouldn’t", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
 ```
 
 ## Cumulative Relative Frequency Calculation (Grouped by Word)
@@ -78,8 +80,9 @@ top_ten_children
 ```
 
 ### Token Counts per Child (All Ages)
+
+Possible that one of the top children found here may produce more tokens outside of the 1-4 age range
 ```{r}
-# Possible that one of the top children found here may produce more tokens outside of the 1-4 age range so I thought top_ten_children might be a better way to select children
 alt_tokens_per_child <- english_tokens_contract_processed %>%
   group_by(collection_name, corpus_name, target_child_name, speaker = "child") %>%
   summarise(token_count = n(), .groups = "drop") %>%
@@ -114,11 +117,11 @@ child_relfreq <-
 
 ## Cumulative PPT Trajectories for Most Productive Children
 
+Note: I did not filter by word in original child_rel_freq data frame as this looks at the fraction of a particular selected function word out of all the selected function words
 ```{r}
 child_relfreq_filtered <-
   child_relfreq %>%
   filter(word %in% selected_function_words)
-# Note: I did not filter by word in original child_rel_freq data frame as this looks at the fraction of a particular selected function word out of all the selected function words
 ```
   
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
@@ -139,8 +142,7 @@ ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, col
 
 ## Aggregate Cumulative PPT Trajectories Across Selected Children (Per Function Word, Per Age)
 
-Computes for each function word and child age, the combined cumulative PPT aggregate across the top children, starting from the already grouped/filtered data of selected children. Black lines show the pooled cumulative trend for each word, alongside the individual children's cumulative PPT trajectories.
-
+Computes for each function word and child age, the combined cumulative PPT aggregate across the top children, starting from the already grouped/filtered data of selected children.
 ```{r}
 aggregate_cumulative_ppt <- child_relfreq_filtered %>%
   group_by(word, target_child_age) %>%
@@ -178,8 +180,7 @@ ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, col
 
 ## Pooled Aggregate Cumulative PPT Trajectories (from original token data)
 
-The cumulative PPT aggregates are computed by pooling all tokens from all selected children for each function word and age, without first computing per-child aggregates. Slightly differs from above aggregate trend
-
+The cumulative PPT aggregates are computed by pooling all tokens from all selected children for each function word and age, without first computing per-child aggregates. Slightly differs from above aggregate trend.
 ```{r}
 aggregate_from_tokens <- english_tokens_contract_processed %>%
   filter(target_child_name %in% top_ten_children$target_child_name,
@@ -223,7 +224,7 @@ ggplot(child_relfreq_filtered %>% filter(word %in% selected_function_words),
 ## Individual Plots: Cumulative PPT Trajectories per Function Word for Selected Children
 
 ```{r individual_cumulative_ppt_plots, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
-plots <- map(selected_function_words, function(current_word) {
+plots <- map(function_words, function(current_word) {
   p <- child_relfreq %>%
     filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
     ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
@@ -243,7 +244,7 @@ plots <- map(selected_function_words, function(current_word) {
 ## Individual Plots: Cumulative PPT with Aggregate Overlay (Per Word)
 
 ```{r individual_cumulative_ppt_aggregate_overlay, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
-plots_aggregate_overlay <- map(selected_function_words, function(current_word) {
+plots_aggregate_overlay <- map(function_words, function(current_word) {
   p <- child_relfreq %>%
     filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
     ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
@@ -268,7 +269,7 @@ plots_aggregate_overlay <- map(selected_function_words, function(current_word) {
 ## Individual Plots: Cumulative PPT with Pooled Aggregate Overlay (Per Function Word)
 
 ```{r individual_cumulative_ppt_pooled_aggregate_overlay, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
-plots_pooled_overlay <- map(selected_function_words, function(current_word) {
+plots_pooled_overlay <- map(function_words, function(current_word) {
   p <- child_relfreq %>%
     filter(word == current_word, target_child_name %in% top_ten_children$target_child_name) %>%
     ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
@@ -352,7 +353,6 @@ ggplot(tokens_top_ten, aes(x = target_child_age)) +
 Computes the overall mean cumulative PPT for each word and age across all children
 
 ```{r}
-
 overall_mean_trend <- functionword_relfreq %>%
   filter(word %in% selected_function_words, age > 12, speaker == "child") %>%
   group_by(word, age) %>%

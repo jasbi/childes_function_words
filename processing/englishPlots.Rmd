@@ -25,6 +25,10 @@ english_tokens_contract_processed <-
 read_feather("../processed_data/english_tokens_contract_processed.feather")
 ```
 
+```{r}
+print(getwd())
+```
+
 There are content words below 6 months which seems quite impossible. It's important to inspect the data in the first year to make sure we don't have major errors. You may need to limit your analysis to 12-72 months only to avoid the issues here.
 
 # Computing Cumulative Relative Frequencies
@@ -44,7 +48,6 @@ syncategory_relfreq <-
   arrange(age) %>%
   mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total))
 ```
-
 
 ## Individual Function Words
 
@@ -88,11 +91,15 @@ We have not yet looked at the emergence of different syntactic categories
 The graph below shows percent word category (content vs. function word) in each monthly been during the development of the child for parents and children.
 
 ```{r}
-syncategory_relfreq %>%
+p <- syncategory_relfreq %>%
   ggplot(aes(age, pct)) +
   geom_point() +
   facet_grid(speaker~syncategory) +
   theme_bw()
+
+p
+ggsave("../pics/content_func.pdf", plot=p)
+saveRDS(p, "../plots/content_func_plot.RDS")
 ```
 
 ## Distribution of Individual Function Words
@@ -149,11 +156,15 @@ saveRDS(neg_no_childdata, "neg_no_childdata.RDS")
 ```
 
 ```{r neg_no_prediction_Plot} 
-ggplot(neg_no_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(neg_no_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+saveRDS(p, "../plots/no_plot.RDS")
+
 ```
 
 ##### Yes (NA)
@@ -211,7 +222,7 @@ neg_not_childdata$predictions <- neg_not_predictions[, "Estimate"]
 ggplot(neg_not_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -259,11 +270,15 @@ and_childdata$predictions <- and_predictions[, "Estimate"]
 ```
 
 ```{r conjunction_prediction_Plot} 
-ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/and_plot.pdf", plot=p)
+saveRDS(p, "../plots/and_plot.RDS")
 ```
 
 #### Or (Done)
@@ -310,7 +325,7 @@ or_childdata$predictions <- or_predictions[, "Estimate"]
 ggplot(or_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -355,11 +370,15 @@ if_childdata$predictions <- if_predictions[, "Estimate"]
 ```
 
 ```{r conjunction_prediction_Plot} 
-ggplot(if_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(if_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+ggsave("../pics/if_plot.pdf", plot=p)
+p
+saveRDS(p, "../plots/if_plot.RDS")
 ```
 
 #### But (Done)
@@ -406,7 +425,7 @@ but_childdata$predictions <- but_predictions[, "Estimate"]
 ggplot(but_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -454,7 +473,7 @@ because_childdata$predictions <- because_predictions[, "Estimate"]
 ggplot(because_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -502,7 +521,7 @@ unless_childdata$predictions <- unless_predictions[, "Estimate"]
 ggplot(unless_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -563,7 +582,7 @@ all_childdata$predictions <- all_predictions[, "Estimate"]
 ggplot(all_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -608,11 +627,15 @@ some_childdata$predictions <- some_predictions[, "Estimate"]
 ```
 
 ```{r some_prediction_Plot} 
-ggplot(some_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(some_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/some_plot.pdf", plot=p)
+saveRDS(p, "../plots/some_plot.RDS")
 ```
 
 #### Both (Done) 
@@ -659,7 +682,7 @@ both_childdata$predictions <- both_predictions[, "Estimate"]
 ggplot(both_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -708,7 +731,7 @@ each_childdata$predictions <- each_predictions[, "Estimate"]
 ggplot(each_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -758,7 +781,7 @@ most_childdata$predictions <- most_predictions[, "Estimate"]
 ggplot(most_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -808,7 +831,7 @@ every_childdata$predictions <- every_predictions[, "Estimate"]
 ggplot(every_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -850,7 +873,7 @@ age_of_production <-
 ```{r many_predictions}
 many_predictions <- as.data.frame(fitted(many_lagModel))
 
-many_childdata <- filter(functionword_relfreq, word=="many", speaker=="child")
+many_childdata <- filter(functionword_relfreq, word=="many", age>20, speaker=="child")
 many_childdata$predictions <- many_predictions[, "Estimate"]
 ```
 
@@ -858,7 +881,7 @@ many_childdata$predictions <- many_predictions[, "Estimate"]
 ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -907,7 +930,7 @@ none_childdata$predictions <- none_predictions[, "Estimate"]
 ggplot(none_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1063,7 +1086,7 @@ always_childdata$predictions <- always_predictions[, "Estimate"]
 ggplot(always_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1110,7 +1133,7 @@ sometimes_childdata$predictions <- sometimes_predictions[, "Estimate"]
 ggplot(sometimes_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1157,7 +1180,7 @@ usually_childdata$predictions <- usually_predictions[, "Estimate"]
 ggplot(usually_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1198,7 +1221,7 @@ age_of_production <-
 ```{r never_predictions}
 never_predictions <- as.data.frame(fitted(never_lagModel))
 
-never_childdata <- filter(functionword_relfreq, word=="never", speaker=="child")
+never_childdata <- filter(functionword_relfreq, word=="never", age>20, speaker=="child")
 never_childdata$predictions <- never_predictions[, "Estimate"]
 ```
 
@@ -1206,7 +1229,7 @@ never_childdata$predictions <- never_predictions[, "Estimate"]
 ggplot(never_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1274,7 +1297,7 @@ once_childdata$predictions <- once_predictions[, "Estimate"]
 ggplot(once_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1336,7 +1359,7 @@ before_childdata$predictions <- before_predictions[, "Estimate"]
 ggplot(before_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "Before")
 ```
@@ -1386,7 +1409,7 @@ after_childdata$predictions <- after_predictions[, "Estimate"]
 ggplot(after_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "After")
 ```
@@ -1435,7 +1458,7 @@ then_childdata$predictions <- then_predictions[, "Estimate"]
 ggplot(then_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1482,7 +1505,7 @@ until_childdata$predictions <- until_predictions[, "Estimate"]
 ggplot(until_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1532,7 +1555,7 @@ age_of_production <-
 ```{r all_predictions}
 while_predictions <- as.data.frame(fitted(while_lagModel))
 
-while_childdata <- filter(functionword_relfreq, word=="while", speaker=="child")
+while_childdata <- filter(functionword_relfreq, word=="while", age>24, speaker=="child")
 while_childdata$predictions <- while_predictions[, "Estimate"]
 ```
 
@@ -1540,7 +1563,7 @@ while_childdata$predictions <- while_predictions[, "Estimate"]
 ggplot(while_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1600,11 +1623,14 @@ more_childdata$predictions <- more_predictions[, "Estimate"]
 ```
 
 ```{r many_prediction_Plot} 
-ggplot(more_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(more_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+p
+ggsave("../pics/more_plot.pdf", plot=p)
+saveRDS(p, "../plots/more_plot.RDS")
 ```
 
 
@@ -1652,7 +1678,7 @@ less_childdata$predictions <- less_predictions[, "Estimate"]
 ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1704,7 +1730,7 @@ much_childdata$predictions <- much_predictions[, "Estimate"]
 ggplot(much_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1752,11 +1778,14 @@ the_childdata$predictions <- the_predictions[, "Estimate"]
 ```
 
 ```{r the_prediction_Plot} 
-ggplot(the_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(the_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+ggsave("../pics/the_plot.pdf", plot=p)
+saveRDS(p, "../plots/the_plot.RDS")
 ```
 
 #### A (Done)
@@ -1800,11 +1829,15 @@ a_childdata$predictions <- a_predictions[, "Estimate"]
 ```
 
 ```{r a_prediction_Plot} 
-ggplot(a_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(a_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/a_plot.pdf", plot=)
+saveRDS(p, "../plots/a_plot.RDS")
 ```
 
 #### This (Done)
@@ -1852,7 +1885,7 @@ this_childdata$predictions <- this_predictions[, "Estimate"]
 ggplot(this_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1903,7 +1936,7 @@ that_childdata$predictions <- that_predictions[, "Estimate"]
 ggplot(that_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -1951,7 +1984,7 @@ these_childdata$predictions <- these_predictions[, "Estimate"]
 ggplot(these_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2001,7 +2034,7 @@ those_childdata$predictions <- those_predictions[, "Estimate"]
 ggplot(those_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2050,11 +2083,15 @@ what_childdata$predictions <- what_predictions[, "Estimate"]
 ```
 
 ```{r what_prediction_Plot} 
-ggplot(what_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(what_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/what_plot.pdf", plot=p)
+saveRDS(p, "../plots/what_plot.RDS")
 ```
 
 
@@ -2099,11 +2136,13 @@ who_childdata$predictions <- who_predictions[, "Estimate"]
 ```
 
 ```{r who_prediction_Plot} 
-ggplot(who_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(who_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+saveRDS(p, "../plots/who_plot.RDS")
 ```
 
 #### When (Done)
@@ -2150,7 +2189,7 @@ when_childdata$predictions <- when_predictions[, "Estimate"]
 ggplot(when_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2204,7 +2243,7 @@ where_childdata$predictions <- where_predictions[, "Estimate"]
 ggplot(where_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2254,7 +2293,7 @@ why_childdata$predictions <- why_predictions[, "Estimate"]
 ggplot(why_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2305,7 +2344,7 @@ how_childdata$predictions <- how_predictions[, "Estimate"]
 ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2355,7 +2394,7 @@ how_childdata$predictions <- how_predictions[, "Estimate"]
 ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2418,7 +2457,7 @@ one_childdata$predictions <- one_predictions[, "Estimate"]
 ggplot(one_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2466,7 +2505,7 @@ two_childdata$predictions <- two_predictions[, "Estimate"]
 ggplot(two_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2515,7 +2554,7 @@ three_childdata$predictions <- three_predictions[, "Estimate"]
 ggplot(three_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2563,7 +2602,7 @@ four_childdata$predictions <- four_predictions[, "Estimate"]
 ggplot(four_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2611,7 +2650,7 @@ five_childdata$predictions <- five_predictions[, "Estimate"]
 ggplot(five_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2659,7 +2698,7 @@ six_childdata$predictions <- six_predictions[, "Estimate"]
 ggplot(six_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2707,7 +2746,7 @@ seven_childdata$predictions <- seven_predictions[, "Estimate"]
 ggplot(seven_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2755,7 +2794,7 @@ eight_childdata$predictions <- eight_predictions[, "Estimate"]
 ggplot(eight_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2803,7 +2842,7 @@ nine_childdata$predictions <- nine_predictions[, "Estimate"]
 ggplot(nine_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2851,7 +2890,7 @@ ten_childdata$predictions <- ten_predictions[, "Estimate"]
 ggplot(ten_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2901,7 +2940,7 @@ first_childdata$predictions <- first_predictions[, "Estimate"]
 ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2950,7 +2989,7 @@ last_childdata$predictions <- last_predictions[, "Estimate"]
 ggplot(last_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2991,7 +3030,7 @@ age_of_production <-
 ```{r second_ordinals_predictions}
 second_predictions <- as.data.frame(fitted(second_lagModel))
 
-second_childdata <- filter(functionword_relfreq, word=="second", speaker=="child", age>12)
+second_childdata <- filter(functionword_relfreq, word=="second", speaker=="child", age>22)
 second_childdata$predictions <- second_predictions[, "Estimate"]
 ```
 
@@ -2999,7 +3038,7 @@ second_childdata$predictions <- second_predictions[, "Estimate"]
 ggplot(second_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3048,7 +3087,7 @@ first_childdata$predictions <- first_predictions[, "Estimate"]
 ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3115,13 +3154,21 @@ can_childdata <- filter(functionword_relfreq, word=="can", speaker=="child")
 can_childdata$predictions <- can_predictions[, "Estimate"]
 ```
 
+```{r}
+print(getwd())
+```
+
 ```{r can_prediction_Plot} 
-ggplot(can_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(can_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "Can")
+
+p
+ggsave("../pics/can_plot.pdf", plot=p)
+saveRDS(p, "../plots/can_plot.RDS")
 ```
 
 #### Could (Done)
@@ -3167,7 +3214,7 @@ could_childdata$predictions <- could_predictions[, "Estimate"]
 ggplot(could_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3217,7 +3264,7 @@ need_childdata$predictions <- need_predictions[, "Estimate"]
 ggplot(need_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3269,7 +3316,7 @@ maybe_childdata$predictions <- maybe_predictions[, "Estimate"]
 ggplot(maybe_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() + 
   coord_cartesian(xlim = c(min(maybe_childdata$age), max(maybe_childdata$age)), ylim = c(min(maybe_childdata$cumulative_ppt), max(maybe_childdata$cumulative_ppt))) +
   labs(title = "Maybe")
@@ -3321,7 +3368,7 @@ might_childdata$predictions <- might_predictions[, "Estimate"]
 ggplot(might_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "Might")
 ```
@@ -3373,7 +3420,7 @@ must_childdata$predictions <- must_predictions[, "Estimate"]
 ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "Must")
 ```
@@ -3423,7 +3470,7 @@ should_childdata$predictions <- should_predictions[, "Estimate"]
 ggplot(should_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3473,7 +3520,7 @@ again_childdata$predictions <- again_predictions[, "Estimate"]
 ggplot(again_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3514,7 +3561,7 @@ age_of_production <-
 ```{r too_predictions}
 too_predictions <- as.data.frame(fitted(too_lagModel))
 
-too_childdata <- filter(functionword_relfreq, word=="too", speaker=="child")
+too_childdata <- filter(functionword_relfreq, word=="too", age>,  speaker=="child")
 too_childdata$predictions <- too_predictions[, "Estimate"]
 ```
 
@@ -3522,7 +3569,7 @@ too_childdata$predictions <- too_predictions[, "Estimate"]
 ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3570,7 +3617,7 @@ also_childdata$predictions <- also_predictions[, "Estimate"]
 ggplot(also_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3616,11 +3663,15 @@ another_childdata$predictions <- another_predictions[, "Estimate"]
 ```
 
 ```{r another_prediction_Plot} 
-ggplot(another_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(another_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/another_plot.pdf", plot=p)
+saveRDS(p, "../plots/another_plot.RDS")
 ```
 
 #### Still (Done)
@@ -3664,11 +3715,15 @@ still_childdata$predictions <- still_predictions[, "Estimate"]
 ```
 
 ```{r still_prediction_Plot} 
-ggplot(still_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(still_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/still_plot.pdf", plot=p)
+saveRDS(p, "../plots/still_plot.RDS")
 ```
 
 #### Other (Something is Wrong!)
@@ -3723,7 +3778,7 @@ too_childdata$predictions <- too_predictions[, "Estimate"]
 ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3779,7 +3834,7 @@ too_childdata$predictions <- too_predictions[, "Estimate"]
 ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3827,11 +3882,16 @@ any_childdata$predictions <- any_predictions[, "Estimate"]
 ```
 
 ```{r any_prediction_Plot} 
-ggplot(any_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(any_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+
+ggsave("../pics/any_plot.pdf", plot=p)
+saveRDS(p, "../plots/any_plot.RDS")
 ```
 
 #### Yet (Done)
@@ -3878,7 +3938,7 @@ yet_childdata$predictions <- yet_predictions[, "Estimate"]
 ggplot(yet_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3927,7 +3987,7 @@ ever_childdata$predictions <- ever_predictions[, "Estimate"]
 ggplot(ever_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3976,7 +4036,7 @@ anyone_childdata$predictions <- anyone_predictions[, "Estimate"]
 ggplot(anyone_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4026,7 +4086,7 @@ anything_childdata$predictions <- anything_predictions[, "Estimate"]
 ggplot(anything_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4071,11 +4131,14 @@ anywhere_childdata$predictions <- anywhere_predictions[, "Estimate"]
 ```
 
 ```{r anywhere_prediction_Plot} 
-ggplot(anywhere_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(anywhere_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+ggsave("../pics/anywhere_plot.pdf", plot=p)
+saveRDS(p, "../plots/anywhere_plot.RDS")
 ```
 
 
@@ -4125,7 +4188,7 @@ anyway_childdata$predictions <- anyway_predictions[, "Estimate"]
 ggplot(anyway_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4176,7 +4239,7 @@ only_childdata$predictions <- only_predictions[, "Estimate"]
 ggplot(only_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4251,7 +4314,7 @@ up_childdata$predictions <- up_predictions[, "Estimate"]
 ggplot(up_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4301,7 +4364,7 @@ on_childdata$predictions <- on_predictions[, "Estimate"]
 ggplot(on_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4347,11 +4410,15 @@ in_childdata$predictions <- in_predictions[, "Estimate"]
 ```
 
 ```{r in_prediction_Plot} 
-ggplot(in_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(in_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/in_plot.pdf", plot=p)
+saveRDS(p, "../plots/in_plot.RDS")
 ```
 
 #### Out (Done)
@@ -4399,7 +4466,7 @@ out_childdata$predictions <- out_predictions[, "Estimate"]
 ggplot(out_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4471,7 +4538,7 @@ down_childdata$predictions <- down_predictions[, "Estimate"]
 ggplot(down_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4521,7 +4588,7 @@ into_childdata$predictions <- into_predictions[, "Estimate"]
 ggplot(into_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4571,7 +4638,7 @@ under_childdata$predictions <- under_predictions[, "Estimate"]
 ggplot(under_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4643,11 +4710,13 @@ over_childdata$predictions <- over_predictions[, "Estimate"]
 ```
 
 ```{r over_prediction_Plot} 
-ggplot(over_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(over_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+saveRDS(p, "../plots/over_plot.RDS")
 ```
 
 #### Behind (Not Converging)
@@ -4695,7 +4764,7 @@ behind_childdata$predictions <- behind_predictions[, "Estimate"]
 ggplot(behind_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4781,7 +4850,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4798,7 +4867,7 @@ functionword_relfreq %>%
 ```
 
 ```{r onto_locatives_growth_model, include=FALSE}
-near_lagModel <- brm(
+onto_lagModel <- brm(
   bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
      upperAsymptote ~ 1,
      growthRate ~ 1,
@@ -4831,7 +4900,7 @@ onto_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(onto_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4892,7 +4961,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4942,7 +5011,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5003,7 +5072,7 @@ either_childdata$predictions <- either_predictions[, "Estimate"]
 ggplot(either_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5062,7 +5131,7 @@ else_childdata$predictions <- else_predictions[, "Estimate"]
 ggplot(else_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5108,11 +5177,13 @@ almost_childdata$predictions <- almost_predictions[, "Estimate"]
 ```
 
 ```{r almost_prediction_Plot} 
-ggplot(almost_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(almost_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+saveRDS(p, "../plots/almost_plot.RDS")
 ```
 
 
@@ -5151,7 +5222,7 @@ age_of_production <-
 ```{r already_predictions}
 already_predictions <- as.data.frame(fitted(already_lagModel))
 
-already_childdata <- filter(functionword_relfreq, word=="already", speaker=="child", age>20)
+already_childdata <- filter(functionword_relfreq, word=="already", speaker=="child", age>21)
 already_childdata$predictions <- already_predictions[, "Estimate"]
 ```
 
@@ -5159,7 +5230,7 @@ already_childdata$predictions <- already_predictions[, "Estimate"]
 ggplot(already_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5208,7 +5279,7 @@ except_childdata$predictions <- except_predictions[, "Estimate"]
 ggplot(except_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5257,7 +5328,7 @@ for_childdata$predictions <- for_predictions[, "Estimate"]
 ggplot(for_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5306,7 +5377,7 @@ from_childdata$predictions <- from_predictions[, "Estimate"]
 ggplot(from_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5356,7 +5427,7 @@ to_childdata$predictions <- to_predictions[, "Estimate"]
 ggplot(to_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5405,7 +5476,7 @@ by_childdata$predictions <- by_predictions[, "Estimate"]
 ggplot(by_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5453,8 +5524,8 @@ very_childdata$predictions <- very_predictions[, "Estimate"]
 ```{r very_prediction_Plot} 
 ggplot(very_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-  geom_l (Dine(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5503,7 +5574,7 @@ with_childdata$predictions <- with_predictions[, "Estimate"]
 ggplot(with_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5552,7 +5623,7 @@ without_childdata$predictions <- without_predictions[, "Estimate"]
 ggplot(without_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5602,7 +5673,7 @@ instead_childdata$predictions <- instead_predictions[, "Estimate"]
 ggplot(instead_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5652,7 +5723,7 @@ such_childdata$predictions <- such_predictions[, "Estimate"]
 ggplot(such_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5698,11 +5769,15 @@ about_childdata$predictions <- about_predictions[, "Estimate"]
 ```
 
 ```{r either_prediction_Plot} 
-ggplot(about_childdata, aes(x = age, y = cumulative_ppt)) +
+p<- ggplot(about_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
-  geom_lin (e(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+p
+ggsave("../pics/me_plot.pdf", plot=p)
+saveRDS(p, "../plots/me_plot.RDS")
 ```
 
 #### Whether (Not enough data)
@@ -5739,6 +5814,7 @@ functionword_relfreq %>%
   geom_point() +
   facet_grid(.~speaker) + 
   theme_bw()
+
 ```
 
 #### I
@@ -6265,13 +6341,21 @@ age_of_production <-
 ```{r}
 age_of_production <- readRDS("age_of_production.RDS")
 
-age_of_production %>%
+n <- 59
+
+p <- age_of_production %>%
   filter(Estimate<40) %>%
+  slice_head(n=n) %>%
   ggplot(aes(x=Estimate, y=word)) +
   geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
   theme_bw() + 
   theme(axis.text.y = element_text(size = 14), xlab="age") + 
   labs(x = "Age (Months)", y="")
+
+p
+ggsave("../pics/age_of_prod_plot.pdf", plot=p)
+saveRDS(p, "../plots/age_of_prod_plot.RDS")
+
 ```
 
 

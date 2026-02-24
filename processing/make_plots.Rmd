@@ -1,0 +1,85 @@
+---
+title: "make_plots"
+output: html_document
+---
+```{r}
+library(patchwork)
+```
+
+```{r}
+# load in the wanted plots
+# --- Settings ---
+rds_files_one <- c(
+  "../plots/almost_plot.RDS",
+  "../plots/more_plot.RDS",
+  "../plots/what_plot.RDS",
+  "../plots/the_plot.RDS",
+  "../plots/some_plot.RDS",
+  "../plots/and_plot.RDS",
+  "../plots/can_plot.RDS",
+  "../plots/in_plot.RDS"
+)
+
+rds_files_two <- c(
+  "../plots/if_plot.RDS",
+  "../plots/any_plot.RDS",
+  "../plots/over_plot.RDS",
+  "../plots/a_plot.RDS",
+  "../plots/another_plot.RDS",
+  "../plots/no_plot.RDS",
+  "../plots/who_plot.RDS",
+  "../plots/still_plot.RDS"
+)
+
+plot_names_one <- c("almost", "more", "what", "the",
+                "some", "and", "can", "in")
+
+plot_names_two <- c("if", "any", "over", "a",
+                "another", "no", "who", "still")
+
+plot_names <- plot_names_two
+rds_files <- rds_files_two
+
+
+text_size <- 25  # adjust this
+
+# --- Load and label ---
+plots <- lapply(seq_along(rds_files), function(i) {
+  p <- readRDS(rds_files[i])
+  p + 
+    labs(title = plot_names[i]) +
+    theme(
+      text = element_text(size = text_size),
+      plot.title = element_text(size = text_size)
+    )
+})
+
+# --- Combine ---
+combined <- wrap_plots(plots, ncol = 2) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+combined
+
+# --- Save ---
+ggsave("../pics/combined_plot_two.pdf", plot = combined, width = 10, height = 14)
+
+# combine them into one
+```
+
+
+```{r}
+p <- readRDS("../plots/content_func_plot.RDS")
+
+text_size <- 25  # adjust this
+
+p <- p + theme(text = element_text(size = text_size),
+               axis.text = element_text(size = text_size),
+               plot.title = element_text(size = text_size),
+               legend.text = element_text(size = text_size))
+
+ggsave("../pics/content_func.pdf", plot = p, width = 6, height = 4)
+
+p
+
+```

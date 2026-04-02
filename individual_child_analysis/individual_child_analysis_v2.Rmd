@@ -124,6 +124,9 @@ child_relfreq_filtered <-
   filter(word %in% selected_function_words)
 ```
   
+  
+### Plot Version 1
+
 ```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
 ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
   geom_line() +
@@ -139,6 +142,28 @@ ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, col
         axis.text = element_text(size = 10),
         legend.position = "bottom")
 ```
+
+### Plot Version 2
+```{r cumulative_ppt_trajectories, warning=FALSE, message=FALSE, fig.width=14, fig.height=14}
+cumulative_ppt <- ggplot(child_relfreq_filtered, aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
+  geom_line() +
+  scale_color_grey(start = 0.2, end = 0.8) +
+  facet_wrap(~ word, ncol = 2, scales = "free_y") +
+  theme_bw(base_size = 22) +  # set base font size to be twice the usual default (default = 11)
+  labs(#title = "Cumulative Relative Frequency of Selected Function Words\nTop 10 Children",
+       x = "Age (months)",
+       y = "Cumulative PPT",
+       color = "Child") +
+  theme(plot.title = element_text(hjust = 0.5, size = 24),
+        axis.title = element_text(size = 22),
+        axis.text = element_text(size = 18), # ticks on axis
+        legend.title = element_text(size = 22),
+        legend.text = element_text(size = 18),
+        strip.text = element_text(size = 20), # panels
+        legend.position = "right")
+print(cumulative_ppt)
+```
+
 
 ## Aggregate Cumulative PPT Trajectories Across Selected Children (Per Function Word, Per Age)
 
@@ -241,6 +266,7 @@ plots <- map(function_words, function(current_word) {
 })
 ```
 
+
 ## Individual Plots: Cumulative PPT with Aggregate Overlay (Per Word)
 
 ```{r individual_cumulative_ppt_aggregate_overlay, fig.width=7, fig.height=5, eval=TRUE, warning=FALSE, message=FALSE}
@@ -264,6 +290,32 @@ plots_aggregate_overlay <- map(function_words, function(current_word) {
     theme(plot.title = element_text(hjust = 0.5))
   print(p)
 })
+```
+
+### Individual Level Trend: "and"
+```{r individual_cumulative_ppt_pooled_aggregate_overlay_and_only, fig.width=14, fig.height=14, eval=TRUE, warning=FALSE, message=FALSE}
+and <- child_relfreq %>%
+  filter(word == "and", target_child_name %in% top_ten_children$target_child_name) %>%
+  ggplot(aes(x = target_child_age, y = cumulative_ppt, color = target_child_name)) +
+  geom_line() +
+  geom_line(data = aggregate_from_tokens %>% filter(word == "and"),
+            aes(x = target_child_age, y = cumulative_ppt, group = NULL),
+            inherit.aes = FALSE,
+            color = "black",
+            size = 1.2) +
+  scale_color_grey(start = 0.2, end = 0.8) +
+  labs(title = "Individual Level Trend for 'and'",
+       x = "Age (months)",
+       y = "Cumulative PPT",
+       color = "Child") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 32),
+        axis.title = element_text(size = 30),
+        axis.text = element_text(size = 26), # ticks on axis
+        legend.title = element_text(size = 30),
+        legend.text = element_text(size = 26),
+        legend.position = "right")
+print(and)
 ```
 
 ## Individual Plots: Cumulative PPT with Pooled Aggregate Overlay (Per Function Word)
@@ -290,6 +342,7 @@ plots_pooled_overlay <- map(function_words, function(current_word) {
   print(p)
 })
 ```
+
 
 # Additional Plots
 

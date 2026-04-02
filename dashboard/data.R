@@ -89,6 +89,7 @@ function_word_pop_traj_data <- functionword_relfreq_pop %>%
     cumulative_ppt
   )
 
+# TEMPORARY CODE
 # Gompertz mean from englishPlots.Rmd brm models:
 # y ~ upperAsymptote * exp(-exp((growthRate*exp(1)/upperAsymptote)*(lag - age) + 1))
 try_gompertz_nls <- function(age, y) {

@@ -3,6 +3,8 @@ title: "Extracting Function Words of Interest from Childes"
 author: "Masoud Jasbi"
 date: "`r Sys.Date()`"
 output: pdf_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -46,16 +48,21 @@ n_tokens_before_exclusions <- nrow(all_english_tokens)
 n_chi_before_exclusions <-
   all_english_tokens$target_child_id %>% unique() %>% length()
 
+<<<<<<< HEAD
 # It is possible to remove the unintelligible tokens. We don't, because we believe these are children's productions that may have been misunderstood or mis-transcribed. Removing them would bias the data against children's productions.
 
 #english_tokens <- 
 #  all_english_tokens %>% 
 #  filter(gloss!="xxx", gloss!="xx", gloss!="yyy", gloss!="www", gloss!="zzz")
+=======
+english_tokens <- all_english_tokens # temporary line
+>>>>>>> 413fa2ef32b62be3522016e231b24cc992aebf53
 
 # count the tokens after excluding unintelligible ones
 #n_unintelligibles_removed <- nrow(english_tokens)
 
 # number of children after excluding unintelligible tokens
+<<<<<<< HEAD
 #n_chi_unintelligibles_removed <-
 #  english_tokens$target_child_id %>% unique() %>% length()
 
@@ -66,15 +73,22 @@ n_chi_before_exclusions <-
 
 # babbles that slipped by 
 #babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+=======
+n_chi_unintels <-
+  english_tokens$target_child_id %>% unique() %>% length()
+>>>>>>> 413fa2ef32b62be3522016e231b24cc992aebf53
 
 # remove all glosses that are just a letter, except for A, a, I, and i
 #alphabet <- c(LETTERS, letters)  # Combine uppercase and lowercase letters
 # filtered_alphabet <- alphabet[!alphabet %in% c("A", "I", "a", "i")]
 
+<<<<<<< HEAD
 #filter out babbles
 #english_tokens <- 
 #  english_tokens %>%
 #  filter(!gloss %in% babbles)
+=======
+>>>>>>> 413fa2ef32b62be3522016e231b24cc992aebf53
 
 # count the tokens after excluding babbles
 #n_tokens_babble_removed <- nrow(english_tokens)
@@ -304,9 +318,12 @@ Here is a list of our function words:
 * Other: either, neither, whether as, else, almost, already, except, for, from, instead, such, with, without, about, by, very, to
 
 Then we create a word column that marks all words as "other". Then we mark the function words of interest.
+We also mark a third type, babbles 
 
 ```{r FunctionWords}
-english_tokens_contract$word <- "nonfunction"
+english_tokens_contract$word <- "nonfunction" # default to nonfunction word type
+
+
 
 function_words_contract <- c("no", "not", "n't", "'ll", "'s", "'d", "'m", "yes", "and", "or", "if", "nor", "therefore", "none", "some", "each", "every", "all", "most", "few", "many", "several", "few", "both", "everyone", "someone", "somebody", "everybody", "nonone", "everything", "something", "nowhere", "somewhere", "everywhere", "more", "less", "much", "most", "least", "than", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "last", "can", "could", "need", "may", "might", "should", "ought", "must", "maybe", "perhaps", "shall", "will", "would", "won't", "any", "anyone", "anything", "anywhere", "anything", "anyway", "anyways", "ever", "yet", "the", "a", "an", "this", "that", "these", "those", "always", "usually", "seldom", "never", "sometimes", "often", "once", "twice", "now", "while", "after", "before", "then", "until", "since", "whenever", "during", "who", "when", "what", "whose", "where", "how", "why", "whom", "on", "in", "out", "up", "down", "under", "above", "below", "along", "over", "behind", "across", "beside", "between", "beyond", "into", "near", "onto", "toward", "here", "through", "here", "there", "because", "but", "although", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "i", "you", "we", "he", "she", "they", "me", "us", "her", "him", "them", "my", "your", "our", "his", "their", "its", "mine", "yours", "ours", "hers", "theirs", "myself", "yourself", "ourselves", "himself", "herself", "yourselves", "themselves", "it", "itself", "again", "too", "also", "another", "other", "others", "still", "only", "just", "even", "indeed", "either", "neither", "whether", "as", "else", "almost", "already", "except", "for", "from", "instead", "such", "with", "without", "about", "by", "very", "unless", "to", "of", "would", "at", "against")
 
@@ -554,11 +571,11 @@ Not all of these verbs are only auxiliary verbs.
 ```{r auxiliaries}
 auxiliaries <- c("am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing") 
 
-for (x in contrasts){
+for (x in auxiliaries){
   english_tokens$word_category[english_tokens$gloss==x] <- "auxiliaries"
 }
 
-for (x in contrasts){
+for (x in auxiliaries){
   english_tokens_contract$word_category[english_tokens_contract$gloss==x] <- "auxiliaries"
 }
 ```
@@ -633,12 +650,33 @@ for (x in other){
 }
 ```
 
+# syntactic category
 ```{r}
 english_tokens$syncategory <- "Function"
 english_tokens$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
 
 english_tokens_contract$syncategory <- "Function"
+<<<<<<< HEAD
 english_tokens_contract$syncategory[english_tokens_contract$word_category=="nonfunction"] <- "nonfunction"
+=======
+english_tokens_contract$syncategory[english_tokens$word_category=="nonfunction"] <- "nonfunction"
+
+# handle babbles here
+# babbles that slipped by will be given the part of speech "bab"
+babbles <- c("uh", "ah", "ooh", "haha", "mm", "mmagh", "ha", "iy", "eh", "aw", "uh", "wahhh", "wahhhh", "baba", "e", "hm", "huh", "mhm","kh", "ne", "ay", "hah", "oh", "um", "va", "ew", "ih", "gh", "rh", "agh", "hah", "uhm", "oo", "heh", "wah", "uhkuh", "mmmmmmamm", "ua", "uhuh", "mmmmbghehmmbgg", "mmbmm", "ummggmm", "mmg", "mmhh", "mmmum", "mmbgeh", "mmmhm", "mmmbg", "ea", "hu", "mmmmbg", "uhoh", "baa", "la", "mmuahah", "muhooh", "uuhooah", "uheh", "gah","hagh", "mmnanananana", "unhunh", "mmbgmm", "ugh", "bowbow", "bowbowbow", "naynay", "ba", "gi", "ado", "Ada", "adaa", "doo", "lalala", "uhhuh", "ummhm", "Dwww's", "Jwww", "Jwww's", "Lala", "ee_ay", "dadadado", "mmmmg", "mmbg", "uhoh")
+unintells <- c("xxx", "xx", "yyy", "www", "zzz")
+
+bab_unint <- c(babbles, unintells)
+
+# change the part of speech to bab
+for (x in bab_unint){
+  english_tokens_contract$part_of_speech[english_tokens_contract$gloss==x] <- "bab"
+}
+
+for (x in bab_unint){
+  english_tokens$part_of_speech[english_tokens$gloss==x] <- "bab"
+}
+>>>>>>> 413fa2ef32b62be3522016e231b24cc992aebf53
 ```
 
 ## Saving Summary Tables

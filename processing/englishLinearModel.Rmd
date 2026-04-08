@@ -195,22 +195,18 @@ age_of_production_predictors <-
   left_join(age_df, by = "word")
 
 # run regression with addition
-add_reg <- lm(Estimate ~ phoneme_length
-                     + frequency
-                     + mean_utterance_length
-                     + Conc.M
-                     + syn_cat,
-             data = age_of_production_predictors)
+add_reg <- lm(Estimate ~ phoneme_length + Conc.M + frequency + mean_utterance_length, data = age_of_production_predictors)
 summary(add_reg)
 
 # run regression with multiplication
 mult_reg <- lm(Estimate ~ phoneme_length
                      * frequency
                      * mean_utterance_length
-                     * Conc.M
-                     * syn_cat,
+                     * Conc.M,
              data = age_of_production_predictors)
 summary(mult_reg)
+
+anova(add_reg, mult_reg)
 
 summary(lm(Estimate ~ phoneme_length + frequency + mean_utterance_length + Conc.M,
              data = age_of_production_predictors))

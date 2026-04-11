@@ -1,0 +1,74 @@
+---
+title: "zipfan"
+author: "Aaron Pilapil"
+date: "`r Sys.Date()`"
+---
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(feather)
+library(brms)
+library(ggeffects)
+library(ggrepel)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "C:/Users/AarPi/OneDrive/Desktop/L3/childes_function_words/processing")
+```
+# Load Data
+
+```{r processedEnglishTokens}
+english_tokens_processed <- read_feather("../processed_data/english_tokens_processed.feather")
+
+english_tokens_contract_processed <-
+read_feather("../processed_data/english_tokens_contract_processed.feather")
+```
+
+
+
+```{r make_dist}
+# freq of word on the y axis
+# results in a 2column table of words and their counts
+word_freq <- english_tokens_contract_processed %>%
+  count(gloss, sort = TRUE)
+
+# divide the counts by the total amount of words
+total_words = nrow(english_tokens_contract_processed)
+word_freq <- word_freq %>%
+  mutate(count = n / total_words)
+
+# plot it
+n_plot = 200 # number of words to plot
+
+word_freq %>%
+  head(n_plot) %>%
+  ggplot(aes(x = reorder(gloss, n), y = n)) +
+  geom_col() +
+  labs(x = "Word", y = "Frequency", title = "Top 20 Most Frequent Words")
+
+```
+
+```{r}
+# given the zipfan distribution make a cutoff for the words
+
+# log graph
+word_freq %>%
+  mutate(rank = row_number()) %>%
+  ggplot(aes(x = log(rank), y = log(n))) +
+  geom_point() +
+  labs(x = "log(Rank)", y = "log(Frequency)")
+
+# cutting of by percent
+top_p = 0.95 # top percent of the data to keep
+word_freq_filtered <- word_freq %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= top_p * n())  
+
+
+word_freq_filtered %>%
+  head(n_plot) %>%
+  ggplot(aes(x = reorder(gloss, n), y = n)) +
+  geom_col() +
+  labs(x = "Word", y = "Frequency", title = "Filtered zipfan distribution")
+```
+

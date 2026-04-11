@@ -27,6 +27,15 @@ english_tokens_contract_processed <-
 read_feather("../processed_data/english_tokens_contract_processed.feather")
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
+=======
+```{r}
+print(getwd())
+```
+
+There are content words below 6 months which seems quite impossible. It's important to inspect the data in the first year to make sure we don't have major errors. You may need to limit your analysis to 12-72 months only to avoid the issues here.
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 # Computing Cumulative Relative Frequencies
 
 ## Function vs. Content Words
@@ -44,9 +53,12 @@ syncategory_relfreq <-
   arrange(age) %>%
   mutate(cum_freq = cumsum(freq), cum_total= cumsum(total), cumulative_relfreq = cumsum(freq)/cumsum(total), cumulative_pct=cumulative_relfreq*100)
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 saveRDS(syncategory_relfreq, "syncategory_relfreq.RDS")
 ```
 
+=======
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ## Individual Function Words
 
 Here we compute cumulative relative frequencies for individual function words by groupingby "word":
@@ -94,6 +106,7 @@ We have not yet looked at the emergence of different syntactic categories
 The graph below shows percent word category (content vs. function word) in each monthly been during the development of the child for parents and children.
 
 ```{r}
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 function_words_plot <-
   syncategory_relfreq %>%
   filter(syncategory=="Function") %>%
@@ -104,6 +117,17 @@ function_words_plot <-
   xlab("Age (Months)") + ylab("Percentage") + 
   scale_y_continuous(limits = c(0, 100)) +
   theme(text = element_text(size = 14))
+=======
+p <- syncategory_relfreq %>%
+  ggplot(aes(age, pct)) +
+  geom_point() +
+  facet_grid(speaker~syncategory) +
+  theme_bw()
+
+p
+ggsave("../pics/content_func.pdf", plot=p)
+saveRDS(p, "../plots/content_func_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r Neg_No_Growth_Model, include=FALSE}
@@ -207,6 +231,7 @@ saveRDS(neg_no_childdata, "../processed_data/neg_no_childdata.RDS")
 ```
 
 ```{r neg_no_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 no_plot <-
   ggplot(neg_no_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -223,6 +248,17 @@ no_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(neg_no_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+saveRDS(p, "../plots/no_plot.RDS")
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ##### Yes (Done)
@@ -330,6 +366,7 @@ not_plot <-
   ggplot(neg_not_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Not", x="Child Age (Month)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -357,6 +394,9 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) +
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
   theme_bw()
 ```
 
@@ -448,6 +488,7 @@ saveRDS(and_childdata, "../processed_data/and_childdata.RDS")
 ```
 
 ```{r conjunction_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 and_plot <-
   ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -469,6 +510,17 @@ and_plot <-
 ```{r age_of_production_and}
 age_of_production <-
   rbind(age_of_production, c("and", round(fixef(and_lagModel)[3,],1)))
+=======
+p <- ggplot(and_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/and_plot.pdf", plot=p)
+saveRDS(p, "../plots/and_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Or (Done)
@@ -521,6 +573,7 @@ or_plot <-
   ggplot(or_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Or", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -538,6 +591,10 @@ or_plot <-
 ```{r age_of_production_or}
 age_of_production <-
   rbind(age_of_production, c("or", round(fixef(or_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### If (Done)
@@ -579,6 +636,7 @@ saveRDS(if_childdata, "../processed_data/if_childdata.RDS")
 ```
 
 ```{r conjunction_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 if_plot <-
   ggplot(if_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -600,6 +658,17 @@ if_plot <-
 ```{r age_of_production_if}
 age_of_production <-
   rbind(age_of_production, c("if", round(fixef(if_lagModel)[3,],1)))
+=======
+p <- ggplot(if_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+ggsave("../pics/if_plot.pdf", plot=p)
+p
+saveRDS(p, "../plots/if_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### But (Done)
@@ -645,6 +714,7 @@ but_plot <-
   ggplot(but_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="BUT", x="", y="") + 
   theme(legend.position = "none") +   
@@ -662,6 +732,10 @@ but_plot <-
 ```{r age_of_production_if}
 age_of_production <-
   rbind(age_of_production, c("but", round(fixef(but_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Because (Done)
@@ -707,6 +781,7 @@ because_plot<-
   ggplot(because_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Because", x="Age (Months)", y="") + 
   theme(legend.position = "none") +   
@@ -719,6 +794,10 @@ because_plot<-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r because_age_of_production}
@@ -773,6 +852,7 @@ unless_plot <-
   ggplot(unless_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="BECAUSE", x="Age (Months)", y="") + 
   theme(legend.position = "none") +   
@@ -785,6 +865,10 @@ unless_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -2071,6 +2155,7 @@ all_plot<-
   ggplot(all_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="All", x="", y="") + 
   theme(legend.position = "none") +   
@@ -2088,6 +2173,10 @@ all_plot<-
 ```{r age_of_production_all}
 age_of_production <-
   rbind(age_of_production, c("all", round(fixef(all_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Some (Done)
@@ -2129,6 +2218,7 @@ saveRDS(some_childdata, "../processed_data/some_childdata.RDS")
 ```
 
 ```{r some_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 some_plot <- 
   ggplot(some_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -2145,6 +2235,17 @@ some_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(some_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/some_plot.pdf", plot=p)
+saveRDS(p, "../plots/some_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r some_age_of_production}
@@ -2201,6 +2302,7 @@ both_plot <-
   ggplot(both_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Both", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -2213,6 +2315,10 @@ both_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Each (Unreliable)
@@ -2264,6 +2370,7 @@ each_plot <-
   ggplot(each_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Each", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -2276,6 +2383,10 @@ each_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Most (Divergent Transitions)
@@ -2327,6 +2438,7 @@ most_plot <-
   ggplot(most_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Most", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -2339,6 +2451,10 @@ most_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Every (Not Converging)
@@ -2390,6 +2506,7 @@ every_plot <-
   ggplot(every_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Every", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -2402,6 +2519,10 @@ every_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Many (Not Converging)
@@ -2442,7 +2563,7 @@ age_of_production <-
 ```{r many_predictions}
 many_predictions <- as.data.frame(fitted(many_lagModel))
 
-many_childdata <- filter(functionword_relfreq, word=="many", speaker=="child")
+many_childdata <- filter(functionword_relfreq, word=="many", age>20, speaker=="child")
 many_childdata$predictions <- many_predictions[, "Estimate"]
 
 saveRDS(many_childdata, "../processed_data/many_childdata.RDS")
@@ -2452,7 +2573,7 @@ saveRDS(many_childdata, "../processed_data/many_childdata.RDS")
 ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2505,6 +2626,7 @@ none_plot <-
   ggplot(none_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Every", x="Child Age (Months)", y="Parts per Thousand") + 
   theme(legend.position = "none") +   
@@ -2517,6 +2639,10 @@ none_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Few
@@ -2686,6 +2812,23 @@ age_of_production <-
   rbind(age_of_production, c("always", round(fixef(always_lagModel)[3,],1)))
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
+=======
+```{r all_predictions}
+always_predictions <- as.data.frame(fitted(always_lagModel))
+
+always_childdata <- filter(functionword_relfreq, word=="always", speaker=="child")
+always_childdata$predictions <- always_predictions[, "Estimate"]
+```
+
+```{r all_prediction_Plot} 
+ggplot(always_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 #### Sometimes (Done)
 
@@ -2732,6 +2875,7 @@ sometimes_plot<-
   ggplot(sometimes_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="SOMETIMES", x="", y="") + 
   theme(legend.position = "none") +   
@@ -2744,6 +2888,10 @@ sometimes_plot<-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Usually (Not Converging)
@@ -2790,7 +2938,7 @@ usually_childdata$predictions <- usually_predictions[, "Estimate"]
 ggplot(usually_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2831,7 +2979,11 @@ age_of_production <-
 ```{r never_predictions}
 never_predictions <- as.data.frame(fitted(never_lagModel))
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 never_childdata <- filter(functionword_relfreq, word=="never", speaker=="child", age>12)
+=======
+never_childdata <- filter(functionword_relfreq, word=="never", age>20, speaker=="child")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 never_childdata$predictions <- never_predictions[, "Estimate"]
 ```
 
@@ -2839,7 +2991,7 @@ never_childdata$predictions <- never_predictions[, "Estimate"]
 ggplot(never_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2907,7 +3059,7 @@ once_childdata$predictions <- once_predictions[, "Estimate"]
 ggplot(once_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -2969,7 +3121,7 @@ before_childdata$predictions <- before_predictions[, "Estimate"]
 ggplot(before_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw() +
   labs(title = "Before")
 ```
@@ -3019,6 +3171,7 @@ after_plot <-
   ggplot(after_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="AFTER", x="", y="") + 
   theme(legend.position = "none") +   
@@ -3031,6 +3184,11 @@ after_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw() +
+  labs(title = "After")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -3078,6 +3236,7 @@ then_childdata$predictions <- then_predictions[, "Estimate"]
 ggplot(then_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="THEN", x="Age (Months)", y="") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -3090,6 +3249,10 @@ ggplot(then_childdata, aes(x = age, y = cumulative_ppt)) +
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Until (Done)
@@ -3135,7 +3298,7 @@ until_childdata$predictions <- until_predictions[, "Estimate"]
 ggplot(until_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3185,7 +3348,7 @@ age_of_production <-
 ```{r all_predictions}
 while_predictions <- as.data.frame(fitted(while_lagModel))
 
-while_childdata <- filter(functionword_relfreq, word=="while", speaker=="child")
+while_childdata <- filter(functionword_relfreq, word=="while", age>24, speaker=="child")
 while_childdata$predictions <- while_predictions[, "Estimate"]
 ```
 
@@ -3193,7 +3356,7 @@ while_childdata$predictions <- while_predictions[, "Estimate"]
 ggplot(while_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3249,6 +3412,7 @@ more_childdata$predictions <- more_predictions[, "Estimate"]
 ```
 
 ```{r many_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 more_plot <-
   ggplot(more_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -3265,6 +3429,16 @@ more_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(more_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+p
+ggsave("../pics/more_plot.pdf", plot=p)
+saveRDS(p, "../plots/more_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r many_age_of_production}
@@ -3316,7 +3490,7 @@ less_childdata$predictions <- less_predictions[, "Estimate"]
 ggplot(many_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3367,6 +3541,7 @@ much_childdata$predictions <- much_predictions[, "Estimate"]
 ggplot(much_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Much", x="", y="") + 
   theme(legend.position = "none") +   
@@ -3382,6 +3557,688 @@ ggplot(much_childdata, aes(x = age, y = cumulative_ppt)) +
 ```
 
 
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+### Definites and Demonstratives
+
+#### The (Done)
+
+```{r the_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="the")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r the_growth_model, include=FALSE}
+the_lagModel  <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="the", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 30), nlpar = "upperAsymptote", lb = 0, ub = 30),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/the_lagModel",
+  iter = 12000)
+```
+
+```{r the_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("the", round(fixef(the_lagModel)[3,],1)))
+```
+
+```{r the_predictions}
+the_predictions <- as.data.frame(fitted(the_lagModel))
+
+the_childdata <- filter(functionword_relfreq, word=="the", speaker=="child")
+the_childdata$predictions <- the_predictions[, "Estimate"]
+```
+
+```{r the_prediction_Plot} 
+p <- ggplot(the_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+ggsave("../pics/the_plot.pdf", plot=p)
+saveRDS(p, "../plots/the_plot.RDS")
+```
+
+#### A (Done)
+
+```{r a_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="a")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r a_growth_model, include=FALSE}
+a_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="a", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 40), nlpar = "upperAsymptote", lb = 0, ub = 40),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/a_lagModel",
+  iter = 12000)
+```
+
+```{r a_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("a", round(fixef(a_lagModel)[3,],1)))
+```
+
+```{r a_predictions}
+a_predictions <- as.data.frame(fitted(a_lagModel))
+
+a_childdata <- filter(functionword_relfreq, word=="a", speaker=="child")
+a_childdata$predictions <- a_predictions[, "Estimate"]
+```
+
+```{r a_prediction_Plot} 
+p <- ggplot(a_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/a_plot.pdf", plot=)
+saveRDS(p, "../plots/a_plot.RDS")
+```
+
+#### This (Done)
+
+```{r the_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="this")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r this_growth_model, include=FALSE}
+this_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="this", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 20), nlpar = "upperAsymptote", lb = 0, ub = 20),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/this_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 15000)
+```
+
+```{r this_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("this", round(fixef(this_lagModel)[3,],1)))
+```
+
+```{r this_predictions}
+this_predictions <- as.data.frame(fitted(this_lagModel))
+
+this_childdata <- filter(functionword_relfreq, word=="this", speaker=="child")
+this_childdata$predictions <- this_predictions[, "Estimate"]
+```
+
+```{r this_prediction_Plot} 
+ggplot(this_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+#### That (Done)
+
+"that" can be a determiner or a complementizer and you need to separate them.
+
+```{r a_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="that")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r that_growth_model, include=FALSE}
+that_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="that", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 30), nlpar = "upperAsymptote", lb = 0, ub = 30),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/that_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 10000)
+```
+
+```{r that_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("that", round(fixef(that_lagModel)[3,],1)))
+```
+
+```{r that_predictions}
+that_predictions <- as.data.frame(fitted(that_lagModel))
+
+that_childdata <- filter(functionword_relfreq, word=="that", speaker=="child")
+that_childdata$predictions <- that_predictions[, "Estimate"]
+```
+
+```{r that_prediction_Plot} 
+ggplot(that_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+#### These (Done)
+
+```{r these_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="these")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r these_growth_model, include=FALSE}
+these_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="these", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 3), nlpar = "upperAsymptote", lb = 0, ub = 3),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/these_lagModel",
+  iter = 12000)
+```
+
+```{r these_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("these", round(fixef(these_lagModel)[3,],1)))
+```
+
+```{r these_predictions}
+these_predictions <- as.data.frame(fitted(these_lagModel))
+
+these_childdata <- filter(functionword_relfreq, word=="these", speaker=="child")
+these_childdata$predictions <- these_predictions[, "Estimate"]
+```
+
+```{r these_prediction_Plot} 
+ggplot(these_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+#### Those (Done)
+
+```{r those_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="those")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw()
+```
+
+```{r those_growth_model, include=FALSE}
+those_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="those", speaker=="child", age>11),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/those_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 15000)
+```
+
+```{r those_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("those", round(fixef(those_lagModel)[3,],1)))
+```
+
+```{r those_predictions}
+those_predictions <- as.data.frame(fitted(those_lagModel))
+
+those_childdata <- filter(functionword_relfreq, word=="those", speaker=="child", age>11)
+those_childdata$predictions <- those_predictions[, "Estimate"]
+```
+
+```{r those_prediction_Plot} 
+ggplot(those_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+### Wh Words
+
+#### What (Done)
+
+```{r what_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="what")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r what_growth_model, include=FALSE}
+what_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="what", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 10), nlpar = "upperAsymptote", lb = 0, ub = 10),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/what_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 15000)
+```
+
+```{r what_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("what", round(fixef(what_lagModel)[3,],1)))
+```
+
+```{r what_predictions}
+what_predictions <- as.data.frame(fitted(what_lagModel))
+
+what_childdata <- filter(functionword_relfreq, word=="what", speaker=="child")
+what_childdata$predictions <- what_predictions[, "Estimate"]
+```
+
+```{r what_prediction_Plot} 
+p <- ggplot(what_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/what_plot.pdf", plot=p)
+saveRDS(p, "../plots/what_plot.RDS")
+```
+
+
+#### Who (Done)
+
+```{r can_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="who")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r who_growth_model, include=FALSE}
+who_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="who", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/who_lagModel",
+  iter = 8000)
+```
+
+```{r who_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("who", round(fixef(who_lagModel)[3,],1)))
+```
+
+```{r who_predictions}
+who_predictions <- as.data.frame(fitted(who_lagModel))
+
+who_childdata <- filter(functionword_relfreq, word=="who", speaker=="child")
+who_childdata$predictions <- who_predictions[, "Estimate"]
+```
+
+```{r who_prediction_Plot} 
+p <- ggplot(who_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+saveRDS(p, "../plots/who_plot.RDS")
+```
+
+#### When (Done)
+
+```{r when_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="when")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r when_growth_model, include=FALSE}
+when_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="when", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/when_lagModel",
+  iter = 8000)
+```
+
+```{r when_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("when", round(fixef(when_lagModel)[3,],1)))
+```
+
+```{r when_predictions}
+when_predictions <- as.data.frame(fitted(when_lagModel))
+
+when_childdata <- filter(functionword_relfreq, word=="when", speaker=="child")
+when_childdata$predictions <- when_predictions[, "Estimate"]
+```
+
+```{r who_prediction_Plot} 
+ggplot(when_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+
+
+
+
+
+#### Where (Done)
+
+```{r when_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="where")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r where_growth_model, include=FALSE}
+where_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="where", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 6), nlpar = "upperAsymptote", lb = 0, ub = 6),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/where_lagModel",
+  iter = 8000)
+```
+
+```{r where_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("where", round(fixef(where_lagModel)[3,],1)))
+```
+
+```{r where_predictions}
+where_predictions <- as.data.frame(fitted(where_lagModel))
+
+where_childdata <- filter(functionword_relfreq, word=="where", speaker=="child")
+where_childdata$predictions <- where_predictions[, "Estimate"]
+```
+
+```{r where_prediction_Plot} 
+ggplot(where_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+
+#### Why (Done)
+
+```{r why_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="why")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r why_growth_model, include=FALSE}
+why_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="why", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 4), nlpar = "upperAsymptote", lb = 0, ub = 4),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/why_lagModel",
+  iter = 8000)
+```
+
+```{r why_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("why", round(fixef(why_lagModel)[3,],1)))
+```
+
+```{r why_predictions}
+why_predictions <- as.data.frame(fitted(why_lagModel))
+
+why_childdata <- filter(functionword_relfreq, word=="why", speaker=="child")
+why_childdata$predictions <- why_predictions[, "Estimate"]
+```
+
+```{r why_prediction_Plot} 
+ggplot(why_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+
+#### How (Done)
+
+```{r how_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="how")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r how_growth_model, include=FALSE}
+how_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="how", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/how_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r how_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("how", round(fixef(how_lagModel)[3,],1)))
+```
+
+```{r how_predictions}
+how_predictions <- as.data.frame(fitted(how_lagModel))
+
+how_childdata <- filter(functionword_relfreq, word=="how", speaker=="child")
+how_childdata$predictions <- how_predictions[, "Estimate"]
+```
+
+```{r how_prediction_Plot} 
+ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+#### Whose
+
+```{r whose_Wh_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="whose")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r whose_wh_model, include=FALSE}
+whose_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="whose", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/whose_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 12000)
+```
+
+```{r how_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("how", round(fixef(how_lagModel)[3,],1)))
+```
+
+```{r how_predictions}
+how_predictions <- as.data.frame(fitted(how_lagModel))
+
+how_childdata <- filter(functionword_relfreq, word=="how", speaker=="child")
+how_childdata$predictions <- how_predictions[, "Estimate"]
+```
+
+```{r how_prediction_Plot} 
+ggplot(how_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+#### Whom (not enough data)
+
+```{r how_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="whom")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 ### Number Words
 
@@ -3429,7 +4286,7 @@ one_childdata$predictions <- one_predictions[, "Estimate"]
 ggplot(one_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3477,7 +4334,7 @@ two_childdata$predictions <- two_predictions[, "Estimate"]
 ggplot(two_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3526,7 +4383,7 @@ three_childdata$predictions <- three_predictions[, "Estimate"]
 ggplot(three_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3574,7 +4431,7 @@ four_childdata$predictions <- four_predictions[, "Estimate"]
 ggplot(four_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3622,7 +4479,7 @@ five_childdata$predictions <- five_predictions[, "Estimate"]
 ggplot(five_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3670,7 +4527,7 @@ six_childdata$predictions <- six_predictions[, "Estimate"]
 ggplot(six_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3718,7 +4575,7 @@ seven_childdata$predictions <- seven_predictions[, "Estimate"]
 ggplot(seven_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3766,7 +4623,7 @@ eight_childdata$predictions <- eight_predictions[, "Estimate"]
 ggplot(eight_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3814,7 +4671,7 @@ nine_childdata$predictions <- nine_predictions[, "Estimate"]
 ggplot(nine_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3862,7 +4719,7 @@ ten_childdata$predictions <- ten_predictions[, "Estimate"]
 ggplot(ten_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3912,7 +4769,7 @@ first_childdata$predictions <- first_predictions[, "Estimate"]
 ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -3961,7 +4818,7 @@ last_childdata$predictions <- last_predictions[, "Estimate"]
 ggplot(last_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4002,7 +4859,7 @@ age_of_production <-
 ```{r second_ordinals_predictions}
 second_predictions <- as.data.frame(fitted(second_lagModel))
 
-second_childdata <- filter(functionword_relfreq, word=="second", speaker=="child", age>12)
+second_childdata <- filter(functionword_relfreq, word=="second", speaker=="child", age>22)
 second_childdata$predictions <- second_predictions[, "Estimate"]
 ```
 
@@ -4010,7 +4867,7 @@ second_childdata$predictions <- second_predictions[, "Estimate"]
 ggplot(second_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4059,7 +4916,7 @@ first_childdata$predictions <- first_predictions[, "Estimate"]
 ggplot(first_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4077,6 +4934,378 @@ functionword_relfreq %>%
 
 
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
+=======
+### Modals
+
+may, ought, perhaps, shall (missing because they are too formal)
+
+will, would (missing because they have contracted forms)
+
+#### Can (Done)
+
+Not enough "cannot" to be worth investigating
+
+```{r can_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="can", age>12)%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw() +
+  labs(title = "Can")
+```
+
+```{r modal_can_growth_model, include=FALSE}
+can_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="can", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 50), nlpar = "upperAsymptote", lb = 0, ub = 50),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/can_lagModel",
+  iter = 8000)
+```
+
+```{r can_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("can", round(fixef(can_lagModel)[3,],1)))
+```
+
+```{r can_predictions}
+can_predictions <- as.data.frame(fitted(can_lagModel))
+
+can_childdata <- filter(functionword_relfreq, word=="can", speaker=="child")
+can_childdata$predictions <- can_predictions[, "Estimate"]
+```
+
+```{r}
+print(getwd())
+```
+
+```{r can_prediction_Plot} 
+p <- ggplot(can_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw() +
+  labs(title = "Can")
+
+p
+ggsave("../pics/can_plot.pdf", plot=p)
+saveRDS(p, "../plots/can_plot.RDS")
+```
+
+#### Could (Done)
+
+```{r could_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="could")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + theme_bw()
+```
+
+```{r could_growth_model, include=FALSE}
+could_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="could", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/could_lagModel",
+  iter = 12000)
+```
+
+```{r could_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("could", round(fixef(could_lagModel)[3,],1)))
+```
+
+```{r could_predictions}
+could_predictions <- as.data.frame(fitted(could_lagModel))
+
+could_childdata <- filter(functionword_relfreq, word=="could", speaker=="child")
+could_childdata$predictions <- could_predictions[, "Estimate"]
+```
+
+```{r many_prediction_Plot} 
+ggplot(could_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+
+#### Need (Done)
+
+```{r need_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="need")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw()
+```
+
+```{r need_growth_model, include=FALSE}
+need_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="need", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 2), nlpar = "upperAsymptote", lb = 0, ub = 2),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/need_lagModel",
+  iter = 10000)
+```
+
+```{r need_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("need", round(fixef(need_lagModel)[3,],1)))
+```
+
+```{r need_predictions}
+need_predictions <- as.data.frame(fitted(need_lagModel))
+
+need_childdata <- filter(functionword_relfreq, word=="need", speaker=="child")
+need_childdata$predictions <- need_predictions[, "Estimate"]
+```
+
+```{r can_prediction_Plot} 
+ggplot(need_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+
+#### Maybe (Done)
+
+```{r need_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="maybe")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) + 
+  theme_bw() +
+  labs(title = "Maybe")
+```
+
+```{r maybe_growth_model, include=FALSE}
+maybe_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="maybe", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(normal(36, 5), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/maybe_lagModel",
+  control = list(adapt_delta = 0.95),
+  iter = 10000)
+```
+
+```{r maybe_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("maybe", round(fixef(maybe_lagModel)[3,],1)))
+```
+
+```{r maybe_predictions}
+maybe_predictions <- as.data.frame(fitted(maybe_lagModel))
+
+maybe_childdata <- filter(functionword_relfreq, word=="maybe", speaker=="child")
+maybe_childdata$predictions <- maybe_predictions[, "Estimate"]
+```
+
+```{r maybe_prediction_Plot} 
+ggplot(maybe_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw() + 
+  coord_cartesian(xlim = c(min(maybe_childdata$age), max(maybe_childdata$age)), ylim = c(min(maybe_childdata$cumulative_ppt), max(maybe_childdata$cumulative_ppt))) +
+  labs(title = "Maybe")
+```
+
+#### Might (Done)
+
+```{r might_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="might")%>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw() +
+  labs(title = "Might")
+```
+
+```{r might_growth_model, include=FALSE}
+might_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="might", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/might_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 10000)
+```
+
+```{r might_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("might", round(fixef(might_lagModel)[3,],1)))
+```
+
+```{r might_predictions}
+might_predictions <- as.data.frame(fitted(might_lagModel))
+
+might_childdata <- filter(functionword_relfreq, word=="might", speaker=="child")
+might_childdata$predictions <- might_predictions[, "Estimate"]
+```
+
+```{r might_prediction_Plot} 
+ggplot(might_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw() +
+  labs(title = "Might")
+```
+
+
+#### Must (Done)
+
+```{r must_comparison_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="must") %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw() +
+  labs(title = "must")
+```
+
+```{r must_growth_model, include=FALSE}
+must_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="must", speaker=="child"),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/must_lagModel",
+  control = list(adapt_delta = 0.9),
+  iter = 12000)
+```
+
+```{r must_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("must", round(fixef(must_lagModel)[3,],1)))
+```
+
+```{r must_predictions}
+must_predictions <- as.data.frame(fitted(must_lagModel))
+
+must_childdata <- filter(functionword_relfreq, word=="must", speaker=="child")
+must_childdata$predictions <- must_predictions[, "Estimate"]
+```
+
+```{r must_prediction_Plot} 
+ggplot(must_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw() +
+  labs(title = "Must")
+```
+#### Should (Done)
+
+```{r should_modal_plot, echo=FALSE}
+functionword_relfreq %>%
+  filter(word=="should", age>15) %>%
+  ggplot(aes(age, cumulative_ppt)) +
+  geom_point() +
+  facet_grid(.~speaker) +
+  theme_bw() +
+  labs(title = "Should")
+```
+
+```{r should_growth_model, include=FALSE}
+should_lagModel <- brm(
+  bf(cumulative_ppt  ~ upperAsymptote * exp(-exp(((growthRate*exp(1))/upperAsymptote)*(lag-age)+1)),
+     upperAsymptote ~ 1,
+     growthRate ~ 1,
+     lag ~ 1,
+     nl = TRUE),
+  data = filter(functionword_relfreq, word=="should", speaker=="child", age>20),
+  prior = c(
+    prior(uniform(0, 1), nlpar = "upperAsymptote", lb = 0, ub = 1),
+    prior(uniform(0, 5), nlpar = "growthRate", lb = 0, ub = 5),
+    prior(uniform(12, 72), nlpar = "lag", lb = 12, ub = 72)
+  ),
+  file = "../modeling/should_lagModel",
+  control = list(adapt_delta = 0.98),
+  iter = 20000)
+```
+
+```{r should_age_of_production}
+age_of_production <-
+  rbind(age_of_production, c("should", round(fixef(should_lagModel)[3,],1)))
+```
+
+```{r should_predictions}
+should_predictions <- as.data.frame(fitted(should_lagModel))
+
+should_childdata <- filter(functionword_relfreq, word=="should", speaker=="child", age>20)
+should_childdata$predictions <- should_predictions[, "Estimate"]
+```
+
+```{r should_prediction_Plot} 
+ggplot(should_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ### Additives
 
 #### Again (Done)
@@ -4121,6 +5350,7 @@ again_plot <-
   ggplot(again_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Again", x="", y="") + 
   theme(legend.position = "none") +   
@@ -4133,6 +5363,10 @@ again_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r again_age_of_production}
@@ -4173,7 +5407,7 @@ too_lagModel <- brm(
 ```{r too_predictions}
 too_predictions <- as.data.frame(fitted(too_lagModel))
 
-too_childdata <- filter(functionword_relfreq, word=="too", speaker=="child")
+too_childdata <- filter(functionword_relfreq, word=="too", age>,  speaker=="child")
 too_childdata$predictions <- too_predictions[, "Estimate"]
 ```
 
@@ -4182,6 +5416,7 @@ too_plot <-
   ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Too", x="", y="") + 
   theme(legend.position = "none") +   
@@ -4194,6 +5429,10 @@ too_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r too_age_of_production}
@@ -4243,6 +5482,7 @@ also_plot <-
   ggplot(also_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Also", x="", y="") + 
   theme(legend.position = "none") +   
@@ -4255,6 +5495,10 @@ also_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r also_age_of_production}
@@ -4300,6 +5544,7 @@ another_childdata$predictions <- another_predictions[, "Estimate"]
 ```
 
 ```{r another_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 another_plot <-
   ggplot(another_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -4316,6 +5561,17 @@ another_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(another_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/another_plot.pdf", plot=p)
+saveRDS(p, "../plots/another_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r another_age_of_production}
@@ -4362,6 +5618,7 @@ still_childdata$predictions <- still_predictions[, "Estimate"]
 ```
 
 ```{r still_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 still_plot <-
   ggplot(still_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -4378,6 +5635,17 @@ still_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(still_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/still_plot.pdf", plot=p)
+saveRDS(p, "../plots/still_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r still_age_of_production}
@@ -4447,7 +5715,26 @@ age_of_production <-
   rbind(age_of_production, c("other", round(fixef(must_lagModel)[3,],1)))
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 #### Others (Unreliable)
+=======
+```{r too_predictions}
+too_predictions <- as.data.frame(fitted(too_lagModel))
+
+too_childdata <- filter(functionword_relfreq, word=="too", speaker=="child")
+too_childdata$predictions <- too_predictions[, "Estimate"]
+```
+
+```{r too_prediction_Plot} 
+ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+#### Others
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 ```{r other_additives_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -4499,7 +5786,7 @@ too_childdata$predictions <- too_predictions[, "Estimate"]
 ggplot(too_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4544,6 +5831,7 @@ any_childdata$predictions <- any_predictions[, "Estimate"]
 ```
 
 ```{r any_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 any_plot <-
   ggplot(any_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -4560,6 +5848,18 @@ any_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+p <- ggplot(any_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+
+ggsave("../pics/any_plot.pdf", plot=p)
+saveRDS(p, "../plots/any_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r any_age_of_production}
@@ -4609,6 +5909,7 @@ yet_plot <-
   ggplot(yet_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Yet", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -4621,6 +5922,10 @@ yet_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r yet_age_of_production}
@@ -4670,6 +5975,7 @@ ever_plot <-
 ggplot(ever_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Ever", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -4682,6 +5988,10 @@ ggplot(ever_childdata, aes(x = age, y = cumulative_ppt)) +
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r ever_age_of_production}
@@ -4735,7 +6045,7 @@ anyone_childdata$predictions <- anyone_predictions[, "Estimate"]
 ggplot(anyone_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4785,7 +6095,7 @@ anything_childdata$predictions <- anything_predictions[, "Estimate"]
 ggplot(anything_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4830,11 +6140,14 @@ anywhere_childdata$predictions <- anywhere_predictions[, "Estimate"]
 ```
 
 ```{r anywhere_prediction_Plot} 
-ggplot(anywhere_childdata, aes(x = age, y = cumulative_ppt)) +
+p <- ggplot(anywhere_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
+
+ggsave("../pics/anywhere_plot.pdf", plot=p)
+saveRDS(p, "../plots/anywhere_plot.RDS")
 ```
 
 
@@ -4884,7 +6197,7 @@ anyway_childdata$predictions <- anyway_predictions[, "Estimate"]
 ggplot(anyway_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -4937,6 +6250,7 @@ only_childdata$predictions <- only_predictions[, "Estimate"]
 ggplot(only_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Only", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -4949,6 +6263,10 @@ ggplot(only_childdata, aes(x = age, y = cumulative_ppt)) +
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Just (Done)
@@ -5185,6 +6503,7 @@ up_plot <-
   ggplot(up_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Up", x="", y="") + 
   theme(legend.position = "none") +   
@@ -5197,6 +6516,10 @@ up_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r up_age_of_production}
@@ -5247,6 +6570,7 @@ on_plot <-
   ggplot(on_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="On", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -5264,6 +6588,10 @@ on_plot <-
 ```{r on_age_of_production}
 age_of_production <-
   rbind(age_of_production, c("on", round(fixef(on_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### In (Done)
@@ -5305,6 +6633,7 @@ in_childdata$predictions <- in_predictions[, "Estimate"]
 ```
 
 ```{r in_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 in_plot <-
   ggplot(in_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -5326,6 +6655,17 @@ in_plot <-
 ```{r in_age_of_production}
 age_of_production <-
   rbind(age_of_production, c("in", round(fixef(in_lagModel)[3,],1)))
+=======
+p <- ggplot(in_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/in_plot.pdf", plot=p)
+saveRDS(p, "../plots/in_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Out (Done)
@@ -5371,6 +6711,7 @@ Out_plot <-
   ggplot(out_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Out", x="", y="") + 
   theme(legend.position = "none") +   
@@ -5388,6 +6729,10 @@ Out_plot <-
 ```{r out_age_of_production}
 age_of_production <-
   rbind(age_of_production, c("out", round(fixef(on_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Outside (No Fit)
@@ -5456,6 +6801,7 @@ down_plot <-
   ggplot(down_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Down", x="", y="") + 
   theme(legend.position = "none") +   
@@ -5468,6 +6814,10 @@ down_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r down_age_of_production}
@@ -5538,7 +6888,24 @@ age_of_production <-
 ```
 
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 #### Under
+=======
+into_childdata <- filter(functionword_relfreq, word=="into", speaker=="child", age>15)
+into_childdata$predictions <- into_predictions[, "Estimate"]
+```
+
+```{r into_prediction_Plot} 
+ggplot(into_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+#### Under (Done)
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 ```{r outside_locatives_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -5600,6 +6967,25 @@ age_of_production <-
   rbind(age_of_production, c("under", round(fixef(under_lagModel)[3,],1)))
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
+=======
+```{r under_predictions}
+under_predictions <- as.data.frame(fitted(under_lagModel))
+
+under_childdata <- filter(functionword_relfreq, word=="under", speaker=="child", age>15)
+under_childdata$predictions <- under_predictions[, "Estimate"]
+```
+
+```{r under_prediction_Plot} 
+ggplot(under_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 #### Above (Not Enough Data)
 
 ```{r outside_locatives_plot, echo=FALSE}
@@ -5688,7 +7074,25 @@ age_of_production <-
 ```
 
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 #### Behind (Not Reliable)
+=======
+over_childdata <- filter(functionword_relfreq, word=="over", speaker=="child", age>12)
+over_childdata$predictions <- over_predictions[, "Estimate"]
+```
+
+```{r over_prediction_Plot} 
+p <- ggplot(over_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+saveRDS(p, "../plots/over_plot.RDS")
+```
+
+#### Behind (Not Converging)
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 ```{r behind_locatives_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -5732,6 +7136,7 @@ behind_plot <-
   ggplot(behind_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Behind", x="", y="") + 
   theme(legend.position = "none") +   
@@ -5749,6 +7154,10 @@ behind_plot <-
 ```{r behind_age_of_production}
 age_of_production <-
   rbind(age_of_production, c("behind", round(fixef(behind_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -5833,7 +7242,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5881,7 +7290,7 @@ onto_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(onto_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5947,7 +7356,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -5997,7 +7406,7 @@ near_childdata$predictions <- near_predictions[, "Estimate"]
 ggplot(near_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -6055,6 +7464,7 @@ either_plot <-
   ggplot(either_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Either", x="", y="") + 
   theme(legend.position = "none") +   
@@ -6067,6 +7477,10 @@ either_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r either_production}
@@ -6130,7 +7544,7 @@ else_childdata$predictions <- else_predictions[, "Estimate"]
 ggplot(else_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -6173,6 +7587,7 @@ almost_childdata$predictions <- almost_predictions[, "Estimate"]
 ```
 
 ```{r almost_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 almost_plot <-
   ggplot(almost_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -6194,6 +7609,15 @@ almost_plot <-
 ```{r almost_production}
 age_of_production <-
   rbind(age_of_production, c("almost", round(fixef(almost_lagModel)[3,],1)))
+=======
+p <- ggplot(almost_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+saveRDS(p, "../plots/almost_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -6234,7 +7658,7 @@ age_of_production <-
 ```{r already_predictions}
 already_predictions <- as.data.frame(fitted(already_lagModel))
 
-already_childdata <- filter(functionword_relfreq, word=="already", speaker=="child", age>20)
+already_childdata <- filter(functionword_relfreq, word=="already", speaker=="child", age>21)
 already_childdata$predictions <- already_predictions[, "Estimate"]
 ```
 
@@ -6242,7 +7666,7 @@ already_childdata$predictions <- already_predictions[, "Estimate"]
 ggplot(already_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -6289,6 +7713,7 @@ except_plot <-
   ggplot(except_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Except", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -6306,6 +7731,10 @@ except_plot <-
 ```{r except_production}
 age_of_production <-
   rbind(age_of_production, c("except", round(fixef(except_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -6351,6 +7780,7 @@ for_plot <-
   ggplot(for_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="For", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -6363,6 +7793,10 @@ for_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r for_production}
@@ -6412,6 +7846,7 @@ from_plot <-
   ggplot(from_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="From", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -6424,6 +7859,10 @@ from_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r from_production}
@@ -6474,6 +7913,7 @@ to_plot <-
   ggplot(to_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="To", x="Age (Months)", y="Cumulative Relative Frequency (PPT)") + 
   theme(legend.position = "none") + scale_x_continuous(breaks = seq(0, 72, by = 3)) +   
@@ -6486,6 +7926,10 @@ to_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r to_production}
@@ -6555,6 +7999,24 @@ age_of_production <-
   rbind(age_of_production, c("by", round(fixef(by_lagModel)[3,],1)))
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
+=======
+```{r by_predictions}
+by_predictions <- as.data.frame(fitted(by_lagModel))
+
+by_childdata <- filter(functionword_relfreq, word=="by", speaker=="child", age>13)
+by_childdata$predictions <- by_predictions[, "Estimate"]
+```
+
+```{r by_prediction_Plot} 
+ggplot(by_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 #### Very (Done)
 
@@ -6598,6 +8060,7 @@ very_plot <-
   ggplot(very_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Very", x="", y="") + 
   theme(legend.position = "none") +   
@@ -6610,6 +8073,10 @@ very_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r either_production}
@@ -6678,7 +8145,27 @@ age_of_production <-
   rbind(age_of_production, c("with", round(fixef(with_lagModel)[3,],1)))
 ```
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 #### Without
+=======
+```{r with_predictions}
+with_predictions <- as.data.frame(fitted(with_lagModel))
+
+with_childdata <- filter(functionword_relfreq, word=="with", speaker=="child", age>10)
+with_childdata$predictions <- with_predictions[, "Estimate"]
+```
+
+```{r with_prediction_Plot} 
+ggplot(with_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+```
+
+
+#### Without (Done)
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 
 ```{r without_plot, echo=FALSE}
 functionword_relfreq %>%
@@ -6720,6 +8207,7 @@ without_plot <-
   ggplot(without_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Without", x="", y="") + 
   theme(legend.position = "none") +   
@@ -6732,6 +8220,10 @@ without_plot <-
     legend.title = element_text(size = 14),
     legend.text  = element_text(size = 12)
   )
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r without_production}
@@ -6781,6 +8273,7 @@ instead_plot <-
   ggplot(instead_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
   theme_bw() + labs(title="Instead", x="", y="") +
   theme(legend.position = "none") +   
@@ -6798,6 +8291,10 @@ instead_plot <-
 ```{r instead_production}
 age_of_production <-
   rbind(age_of_production, c("instead", round(fixef(instead_lagModel)[3,],1)))
+=======
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 
@@ -6848,7 +8345,7 @@ such_childdata$predictions <- such_predictions[, "Estimate"]
 ggplot(such_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
   geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
-  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "blue")) +
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
   theme_bw()
 ```
 
@@ -6891,6 +8388,7 @@ about_childdata$predictions <- about_predictions[, "Estimate"]
 ```
 
 ```{r either_prediction_Plot} 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 about_plot <-
   ggplot(about_childdata, aes(x = age, y = cumulative_ppt)) +
   geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
@@ -6912,6 +8410,17 @@ about_plot <-
 ```{r either_production}
 age_of_production <-
   rbind(age_of_production, c("about", round(fixef(about_lagModel)[3,],1)))
+=======
+p<- ggplot(about_childdata, aes(x = age, y = cumulative_ppt)) +
+  geom_point(aes(color = "Actual Data"), size = 2) + # Original data points
+  geom_line(aes(y = predictions, color = "Fitted Values"), size = 1) + # Fitted values
+  scale_color_manual(name = "Legend", values = c("Actual Data" = "black", "Fitted Values" = "grey")) +
+  theme_bw()
+
+p
+ggsave("../pics/me_plot.pdf", plot=p)
+saveRDS(p, "../plots/me_plot.RDS")
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 #### Whether (Not enough data)
@@ -6999,9 +8508,14 @@ functionword_relfreq %>%
   ggplot(aes(age, cumulative_ppt)) +
   geom_point() +
   facet_grid(.~speaker) + 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
   theme_bw() +
   labs(title = "Me") +
   xlab("Child Age (Months)") + ylab("Cumulative Parts Per Thousand") 
+=======
+  theme_bw()
+
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```
 
 ```{r mine_growth_model, include=FALSE}
@@ -8556,6 +10070,7 @@ saveRDS(age_of_production, "../processed_data/age_of_production.RDS")
 ```{r}
 age_of_production <- readRDS("../processed_data/age_of_production.RDS")
 
+<<<<<<< HEAD:processing/englishPlotsAndCurves.Rmd
 functionword_onsetage_plot <-
   age_of_production %>%
   mutate(word = fct_reorder(word, Estimate)) %>%
@@ -8566,4 +10081,133 @@ functionword_onsetage_plot <-
   scale_x_continuous(breaks = seq(0, 72, by = 3)) +
   labs(x = "Age (Months)", y="") +
   theme(text = element_text(size = 12))
+=======
+n <- 59
+
+p <- age_of_production %>%
+  filter(Estimate<40) %>%
+  slice_head(n=n) %>%
+  ggplot(aes(x=Estimate, y=word)) +
+  geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5)) +
+  theme_bw() + 
+  theme(axis.text.y = element_text(size = 14), xlab="age") + 
+  labs(x = "Age (Months)", y="")
+
+p
+ggsave("../pics/age_of_prod_plot.pdf", plot=p)
+saveRDS(p, "../plots/age_of_prod_plot.RDS")
+
+```
+
+
+# Wordbank MB-CDI Function Word Trajectories
+
+## English Funtion Word Trajectory Plots
+
+```{r}
+cdi_data <- 
+  read_csv("../raw_data/wordbank_functionword_trajectories.csv") %>%
+  gather("word", "proportion", a:how)
+
+#write_csv(cdi_data, "../processed_data/cdi_functionwords.csv")
+```
+
+```{r functionWordPlots}
+cdi_data <- read_csv("../processed_data/cdi_functionwords.csv")
+
+# Get the last point for each line
+last_points <- cdi_data %>%
+  group_by(word) %>%
+  slice_max(order_by = age, n = 1)
+
+# Plot with labels at the end of each line, avoiding overlap
+ggplot(cdi_data, aes(x = age, y = proportion, colour = word)) +
+  geom_line() +
+  geom_text_repel(data = last_points, aes(label = word), 
+                  nudge_x = 1, # Horizontal nudging for clarity
+                  direction = "y", # Allow vertical adjustment
+                  color = "black", # Label color
+                  show.legend = FALSE) + # Suppress legend
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1)) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 14), legend.position = "none") +
+  labs(x = "Age (Months)", y = "Proportion")
+```
+
+```{r}
+library(wordbankr)
+```
+
+```{r}
+# replicate the above graph from the R API
+# get all the data
+eng_ws_data <- get_instrument_data(language = "English (American)",
+                                   form = "WS",
+                                   administration_info = TRUE,
+                                   item_info = TRUE)
+
+# filter it down to just child_id, item_definition, produces boolean, age
+wordbank_df <- eng_ws_data %>% select(item_definition, age, produces, child_id)
+
+# clean item_definition column
+wordbank_df$item_definition <- trimws(tolower(wordbank_df$item_definition))
+
+# get just the function words
+func_wordbank <- wordbank_df[wordbank_df$item_definition %in% function_words,]
+
+# Calculate proportion of children producing each word at each age
+word_proportions <- func_wordbank %>%
+  group_by(item_definition, age) %>%
+  summarise(
+    total_children = n_distinct(child_id),
+    children_producing = sum(produces == TRUE),
+    proportion = children_producing / total_children,
+    .groups = 'drop'
+  )
+  
+# plot
+ggplot(word_proportions, aes(x = age, y = proportion, color = item_definition)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  labs(
+    title = "Proportion of Children Producing Each Word by Age",
+    x = "Age (months)",
+    y = "Proportion of Children",
+    color = "Word"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),
+    legend.position = "right",
+    legend.text = element_text(size = 8),      # Smaller text
+    legend.title = element_text(size = 10),    # Smaller title
+    legend.key.size = unit(0.5, "cm")          # Smaller legend keys
+  ) +
+  guides(color = guide_legend(ncol = 2))       # Two columns in legend
+
+```
+
+## Onset Age of Production Estimates
+
+```{r}
+CDI_onset_age <- 
+  cdi_data %>%
+  group_by(word) %>%
+  summarise(
+    age_above_0.1 = min(age[proportion >= 0.1], na.rm = TRUE),
+    age_above_0.15 = min(age[proportion >= 0.15], na.rm = TRUE),
+    age_above_0.2 = min(age[proportion >= 0.2], na.rm = TRUE)
+  )
+```
+
+```{r}
+CDI_onset_age %>%
+  ggplot(aes(x = age_above_0.15, y = reorder(word, age_above_0.15))) +
+  geom_pointrange(aes(xmin = age_above_0.1, xmax = age_above_0.2)) +
+  theme_bw() + 
+  theme(axis.text.y = element_text(size = 14), xlab = "age") + 
+  labs(x = "Age (Months)", y = "") +
+  scale_x_continuous(breaks = seq(min(CDI_onset_age$age_above_0.15), max(CDI_onset_age$age_above_0.15), by = 1))
+>>>>>>> 83828f47202f7ec9fe4d231b8101dda67bfdf7ef:processing/englishPlots.Rmd
 ```

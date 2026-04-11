@@ -1,0 +1,33 @@
+# TEMPORARY SAMPLE LITERATURE SECTION
+# replace with relevant literature for each function word
+- example:
+    description: "Quantifiers in early child speech acquisition research."
+    authors: ["Smith, J.", "Lee, C."]
+    year: 2019
+    publication: "Journal of Child Language"
+    focus_function_words: ["and"]
+    notes: "Explores how children learn to use quantifiers in spontaneous conversations."
+
+- example:
+    description: "The role of determiners in bilingual language development."
+    authors: ["Ramirez, M.", "Kovacs, B."]
+    year: 2022
+    publication: "Applied Linguistics"
+    focus_function_words: ["no"]
+    notes: "A comparative study of determiner use in English-Spanish bilingual children."
+
+- example:
+    description: "Function words as predictors of syntactic complexity."
+    authors: ["Chen, F."]
+    year: 2017
+    publication: "Cognitive Development"
+    focus_function_words: ["not"]
+    notes: "Analyzes how children's use of complementizers correlates with overall syntactic development."
+
+- example:
+    description: "Longitudinal analysis of pronoun acquisition."
+    authors: ["O'Malley, S.", "Patel, R."]
+    year: 2015
+    publication: "First Language"
+    focus_function_words: ["i"]
+    notes: "Tracks pronoun emergence and errors in early child language over two years."

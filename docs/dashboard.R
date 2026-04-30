@@ -8,11 +8,11 @@ library(RColorBrewer)
 library(purrr)
 library(yaml)
 
-source("dashboard/styling.R")    # colors, themes, styling helpers
-source("dashboard/data.R")       # data loading and calculations
-source("dashboard/literature.R") # literature YAML loading/processing
-source("dashboard/plots.R")      # UI and server definitions (plots, tables)
+source("docs/styling.R")    # colors, themes, styling helpers
+source("docs/data.R")       # data loading and calculations
+source("docs/literature.R") # literature YAML loading/processing
+source("docs/plots.R")      # UI and server definitions (plots, tables)
 
 shinyApp(ui = ui, server = server)
 
-shiny::runApp("dashboard/dashboard.R")
+shiny::runApp("docs/dashboard.R")

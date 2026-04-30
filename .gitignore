@@ -55,3 +55,4 @@ processed_data/english_tokens_contract_processed.feather
 literature/
 raw_data/all_english_tokens.csv
 raw_data/english_tokens_excluded.csv
+.positai

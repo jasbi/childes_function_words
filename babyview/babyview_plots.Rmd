@@ -12,12 +12,25 @@ library(arrow)
 
 # Load Data
 
+**Option A** — run the full pipeline (requires feather files from `babyview_func_extract.Rmd`).
+Run chunks `load` and all three frequency chunks, then `save_results`.
+
+**Option B** — load pre-computed results (no feather files needed).
+Skip everything below and run only the `load_results` chunk, then go straight to Plots.
+
 ```{r load}
+# OPTION A: load from feather files
+# comment out the one you don't want to run
 babyview_tokens_processed <-
   read_feather("../processed_data/babyview_tokens_processed.feather")
 
 babyview_tokens_contract_processed <-
   read_feather("../processed_data/babyview_tokens_contract_processed.feather")
+```
+
+```{r load_results, eval=FALSE}
+# OPTION B: load pre-computed frequency tables (skip feather + computation chunks)
+# load("../processed_data/babyview_results.RData")
 ```
 
 # Computing Cumulative Relative Frequencies
@@ -76,6 +89,14 @@ wordcategory_relfreq <-
     cum_total          = cumsum(total),
     cumulative_relfreq = cum_freq / cum_total
   )
+```
+
+## Save Results
+
+```{r save_results}
+# Saves the three frequency tables so collaborators can load them without feather files
+save(syncategory_relfreq, functionword_relfreq, wordcategory_relfreq,
+     file = "../processed_data/babyview_results.RData")
 ```
 
 # Plots

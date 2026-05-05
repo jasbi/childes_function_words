@@ -5,7 +5,6 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 library(tidyverse)
 library(arrow)
 ```
@@ -30,7 +29,7 @@ babyview_tokens_contract_processed <-
 
 ```{r load_results, eval=FALSE}
 # OPTION B: load pre-computed frequency tables (skip feather + computation chunks)
-# load("../processed_data/babyview_results.RData")
+load("../processed_data/babyview_results.RData")
 ```
 
 # Computing Cumulative Relative Frequencies
